@@ -62,11 +62,7 @@ def clear_line(game):
         if clear:
             cleared_lines.append(i)
 
-    if clear:
-        for i in cleared_lines:
-            for j in range(len(game.grid[i])):
-                game.grid[i][j] = (0, 0, 0)
-
+    if cleared_lines:
         for i in range(max(cleared_lines), 0, -1):
             for j in range(len(game.grid[i])):
                 game.grid[i][j] = game.grid[i-1][j]
@@ -205,8 +201,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.init()
 
     def init(self):
-        self.block_pos = [int(self.pos[0]), int(self.pos[1])]
-        self.block_pos_test = [[int(self.pos[0]), int(self.pos[1])]]
+        self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
         self.pos.x = self.game.grid_pos[0] + self.pos[0]*self.game.block_size[0]
         self.pos.y = self.game.grid_pos[1] + self.pos[1]*self.game.block_size[1]
         self.rot = 0
@@ -216,9 +211,7 @@ class Tetromino(pygame.sprite.Sprite):
         print(self.item)
 
     def draw(self):
-        self.game.gameDisplay.blit(self.surface, self.rect)
-
-        for block in self.block_pos_test:
+        for block in self.block_pos:
             rect = self.rect.copy()
             rect.x = self.game.grid_pos[0] + block[0]*self.game.block_size[0]
             rect.y = self.game.grid_pos[1] + block[1]*self.game.block_size[1]
@@ -239,7 +232,8 @@ class Tetromino(pygame.sprite.Sprite):
                 self.update_move(dx, dy, rot)
 
     def update_shape(self, rot=0):
-        shape = self.game.main_dict["shape"][self.item][self.rot + rot]
+        index = (self.rot + rot) % len(self.game.main_dict["shape"][self.item])
+        shape = self.game.main_dict["shape"][self.item][index]
         block_pos = []
         offset_x, offset_y = None, None
         for y, line in enumerate(shape):
@@ -247,48 +241,34 @@ class Tetromino(pygame.sprite.Sprite):
                 if column == "0":
                     if offset_x is None or offset_y is None:
                         offset_x, offset_y = x, y
-                    block_pos.append([self.block_pos_test[0][0] + x-offset_x, self.block_pos_test[0][1] + y-offset_y])
-        self.block_pos_test = block_pos
+                    block_pos.append([self.block_pos[0][0] + x-offset_x, self.block_pos[0][1] + y-offset_y])
+
+        verify = True
+        for block in block_pos:
+            if not(0 <= block[0] <= 9 and self.game.grid[block[1]][block[0]] == (0, 0, 0)):
+                verify = False
+        if verify:
+            self.block_pos = block_pos
+            self.rot = index
 
     def update_move(self, dx=0, dy=0, rot=0):
-        if self.verify_move(dx, dy, rot):
-            update_move(self, dx*self.game.block_size[0], dy*self.game.block_size[1])
-
-
-    def verify_move(self, dx=0, dy=0, rot=0):
-        move = False
-        test = True
-
-        if not test:
-            if self.block_pos[1] + dy >= 20 or self.game.grid[self.block_pos[1]+dy][self.block_pos[0]] != (0, 0, 0):
-                self.game.grid[self.block_pos[1]][self.block_pos[0]] = self.color
-                next_piece(self.game)
-                self.kill()
-            elif 0 <= self.block_pos[0] + dx <= 9 and self.game.grid[self.block_pos[1]][self.block_pos[0]+dx] == (0, 0, 0):
-                self.block_pos[0] += dx
-                self.block_pos[1] += dy
-                move = True
-
-        if test:
-            move = True
-            kill = False
-            for block in self.block_pos_test:
-                if not kill:
-                    if block[1] + dy >= 20 or self.game.grid[block[1]+dy][block[0]] != (0, 0, 0):
-                        kill = True
-                    elif not(0 <= block[0] + dx <= 9 and self.game.grid[block[1]][block[0]+dx] == (0, 0, 0)):
-                        move = False
-            if kill:
-                for block in self.block_pos_test:
-                    self.game.grid[block[1]][block[0]] = self.color
-                next_piece(self.game)
-                self.kill()
-            elif move:
-                for block in self.block_pos_test:
-                    block[0] += dx
-                    block[1] += dy
-                    
-        return move
+        move = True
+        kill = False
+        for block in self.block_pos:
+            if block[1] + dy >= 20 or self.game.grid[block[1]+dy][block[0]] != (0, 0, 0):
+                kill = True
+            elif not(0 <= block[0] + dx <= 9 and self.game.grid[block[1]][block[0]+dx] == (0, 0, 0)):
+                move = False
+        if kill:
+            for block in self.block_pos:
+                self.game.grid[block[1]][block[0]] = self.color
+            next_piece(self.game)
+            self.kill()
+        elif move:
+            for block in self.block_pos:
+                block[0] += dx
+                block[1] += dy
+        self.update_shape(rot)
 
     def update(self):
         self.get_keys()
