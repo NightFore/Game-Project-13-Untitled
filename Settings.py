@@ -7,7 +7,7 @@ from os import path
 project_title = "Untitled"
 screen_size = WIDTH, HEIGHT = 1280, 720
 FPS = 60
-default_volume = 100
+default_volume = 5
 
 """
     Colors
