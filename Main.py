@@ -48,8 +48,9 @@ def draw_grid(game):
             game.block_surface = init_surface(game.block_surface, game.block_surface_rect, game.grid[i][j], (150, 150, 150))
             game.gameDisplay.blit(game.block_surface, (game.grid_pos[0] + dx, game.grid_pos[1] + dy))
 
-def next_piece(game):
+def next_piece(sprite, game):
     clear_line(game)
+    sprite.kill()
     game.test_1 = Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
 
 def clear_line(game):
@@ -63,11 +64,13 @@ def clear_line(game):
             cleared_lines.append(i)
 
     if cleared_lines:
-        for i in range(max(cleared_lines), 0, -1):
+        for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
+            print(i)
             for j in range(len(game.grid[i])):
-                game.grid[i][j] = game.grid[i-1][j]
-        for j in range(len(game.grid[0])):
-            game.grid[0][j] = (0, 0, 0)
+                game.grid[i][j] = game.grid[i-len(cleared_lines)][j]
+        for i in range(len(cleared_lines)):
+            for j in range(len(game.grid[0])):
+                game.grid[i][j] = (0, 0, 0)
 
 
 def get_shape(game):
@@ -262,8 +265,7 @@ class Tetromino(pygame.sprite.Sprite):
         if kill:
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
-            next_piece(self.game)
-            self.kill()
+            next_piece(self, self.game)
         elif move:
             for block in self.block_pos:
                 block[0] += dx
