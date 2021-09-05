@@ -94,98 +94,98 @@ MAIN_DICT = {
 
     "shape": {
         "S": [['.....',
-               '......',
                '..00..',
-               '.00...',
+               '.0X...',
+               '......',
                '.....'],
               ['.....',
                '..0..',
-               '..00.',
+               '..X0.',
                '...0.',
                '.....']],
         "Z": [['.....',
-               '.....',
                '.00..',
-               '..00.',
+               '..X0.',
+               '.....',
                '.....'],
               ['.....',
                '..0..',
-               '.00..',
+               '.0X..',
                '.0...',
                '.....']],
         "I": [['..0..',
                '..0..',
-               '..0..',
+               '..X..',
                '..0..',
                '.....'],
               ['.....',
-               '0000.',
                '.....',
+               '00X0.',
                '.....',
                '.....']],
         "O": [['.....',
+               '..00.',
+               '..X0.',
                '.....',
-               '.00..',
-               '.00..',
                '.....']],
         "J": [['.....',
                '.0...',
-               '.000.',
+               '.0X0.',
                '.....',
                '.....'],
               ['.....',
                '..00.',
-               '..0..',
+               '..X..',
                '..0..',
                '.....'],
               ['.....',
                '.....',
-               '.000.',
+               '.0X0.',
                '...0.',
                '.....'],
               ['.....',
                '..0..',
-               '..0..',
+               '..X..',
                '.00..',
                '.....']],
         "L": [['.....',
                '...0.',
-               '.000.',
+               '.0X0.',
                '.....',
                '.....'],
               ['.....',
                '..0..',
-               '..0..',
+               '..X..',
                '..00.',
                '.....'],
               ['.....',
                '.....',
-               '.000.',
+               '.0X0.',
                '.0...',
                '.....'],
               ['.....',
                '.00..',
-               '..0..',
+               '..X..',
                '..0..',
                '.....']],
         "T": [['.....',
                '..0..',
-               '.000.',
+               '.0X0.',
                '.....',
                '.....'],
               ['.....',
                '..0..',
-               '..00.',
+               '..X0.',
                '..0..',
                '.....'],
               ['.....',
                '.....',
-               '.000.',
+               '.0X0.',
                '..0..',
                '.....'],
               ['.....',
                '..0..',
-               '.00..',
+               '.0X..',
                '..0..',
                '.....']]
     }
@@ -205,6 +205,8 @@ class Tetromino(pygame.sprite.Sprite):
 
     def init(self):
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
+        self.block_center = 0
+        self.offset = -2, -2
         self.pos.x = self.game.grid_pos[0] + self.pos[0]*self.game.block_size[0]
         self.pos.y = self.game.grid_pos[1] + self.pos[1]*self.game.block_size[1]
         self.rot = 0
@@ -235,32 +237,33 @@ class Tetromino(pygame.sprite.Sprite):
                 self.update_move(dx, dy, rot)
 
     def update_shape(self, rot=0):
-        index = (self.rot + rot) % len(self.game.main_dict["shape"][self.item])
-        shape = self.game.main_dict["shape"][self.item][index]
+        block_rot = (self.rot + rot) % len(self.game.main_dict["shape"][self.item])
+        shape = self.game.main_dict["shape"][self.item][block_rot]
         block_pos = []
-        offset_x, offset_y = None, None
+        block_center = 0
         for y, line in enumerate(shape):
             for x, column in enumerate(line):
-                if column == "0":
-                    if offset_x is None or offset_y is None:
-                        offset_x, offset_y = x, y
-                    block_pos.append([self.block_pos[0][0] + x-offset_x, self.block_pos[0][1] + y-offset_y])
+                if column == "0" or column == "X":
+                    block_pos.append([self.block_pos[self.block_center][0] + self.offset[0] + x, self.block_pos[self.block_center][1] + self.offset[1] + y])
+                if column == "X":
+                    block_center = len(block_pos) - 1
 
         verify = True
         for block in block_pos:
-            if not(0 <= block[0] <= 9 and self.game.grid[block[1]][block[0]] == (0, 0, 0)):
+            if not(0 <= block[0] <= 9) or block[1] >= 20 or block[1] >= 0 and self.game.grid[block[1]][block[0]] != (0, 0, 0):
                 verify = False
         if verify:
             self.block_pos = block_pos
-            self.rot = index
+            self.block_center = block_center
+            self.rot = block_rot
 
     def update_move(self, dx=0, dy=0, rot=0):
-        move = True
         kill = False
+        move = True
         for block in self.block_pos:
-            if block[1] + dy >= 20 or self.game.grid[block[1]+dy][block[0]] != (0, 0, 0):
+            if block[1] + dy >= 20 or block[1] >= 0 and self.game.grid[block[1]+dy][block[0]] != (0, 0, 0):
                 kill = True
-            elif not(0 <= block[0] + dx <= 9 and self.game.grid[block[1]][block[0]+dx] == (0, 0, 0)):
+            elif not(0 <= block[0] + dx <= 9) or block[1] >= 0 and self.game.grid[block[1]][block[0]+dx] != (0, 0, 0):
                 move = False
         if kill:
             for block in self.block_pos:
@@ -270,6 +273,9 @@ class Tetromino(pygame.sprite.Sprite):
             for block in self.block_pos:
                 block[0] += dx
                 block[1] += dy
+            if dy != 0:
+                self.last_fall = pygame.time.get_ticks()
+
         self.update_shape(rot)
 
     def update(self):
