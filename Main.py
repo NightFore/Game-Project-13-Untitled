@@ -78,7 +78,14 @@ def clear_line(game):
         for i in range(len(cleared_lines)):
             for j in range(len(game.grid[0])):
                 game.grid[i][j] = (0, 0, 0)
-
+        if len(cleared_lines) == 1:
+            pygame.mixer.Sound.play(game.sounds_effects["single"])
+        if len(cleared_lines) == 2:
+            pygame.mixer.Sound.play(game.sounds_effects["double"])
+        if len(cleared_lines) == 3:
+            pygame.mixer.Sound.play(game.sounds_effects["triple"])
+        if len(cleared_lines) == 4:
+            pygame.mixer.Sound.play(game.sounds_effects["tetris"])
 
 def get_shape(game):
     return random.choice(list(game.shape_dict))
@@ -134,15 +141,15 @@ MAIN_DICT = {
                '.0X..',
                '.0...',
                '.....']],
-        "I": [['..0..',
-               '..0..',
-               '..X..',
-               '..0..',
-               '.....'],
-              ['.....',
+        "I": [['.....',
                '.....',
                '00X0.',
                '.....',
+               '.....'],
+              ['..0..',
+               '..0..',
+               '..X..',
+               '..0..',
                '.....']],
         "O": [['.....',
                '..00.',
@@ -233,7 +240,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.pos.x = self.game.grid_pos[0] + self.pos[0]*self.game.block_size[0]
         self.pos.y = self.game.grid_pos[1] + self.pos[1]*self.game.block_size[1]
         self.last_fall = pygame.time.get_ticks()
-        self.update_move()
+        self.update_test_2()
         print(self.item)
 
     def draw(self):
@@ -255,7 +262,68 @@ class Tetromino(pygame.sprite.Sprite):
                     dx = -1
                 if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
                     dx = 1
-                self.update_move(dx, dy, rot)
+                self.update_test_2(dx, dy, rot)
+
+    def update_test(self, dx=0, dy=0, rot=0):
+        dx_check, dy_check, rot_check = True, True, True
+        for block in self.block_pos:
+            if not(0 <= block[0] + dx <= 9 and block[1] + dy <= 19 and self.game.grid[block[1]+dy][block[0]+dx] == (0, 0, 0)):
+                dx_check, dy_check = not(dx != 0), not(dy != 0)
+        if not dy_check:
+            for block in self.block_pos:
+                self.game.grid[block[1]][block[0]] = self.color
+            next_piece(self, self.game)
+        elif dx_check:
+            for block in self.block_pos:
+                block[0] += dx
+                block[1] += dy
+            if dy != 0:
+                self.last_fall = pygame.time.get_ticks()
+
+        self.update_shape(rot)
+
+    def update_test_2(self, dx=0, dy=0, rot=0):
+        dx_check, dy_check, rot_check = True, True, True
+        block_pos = []
+        for block in self.block_pos:
+            block_pos.append(block[:])
+        for block in block_pos:
+            block[0], block[1] = block[0] + dx, block[1] + dy
+            if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
+                dx_check, dy_check = not(dx != 0), not(dy != 0)
+        if not dy_check:
+            for block in self.block_pos:
+                self.game.grid[block[1]][block[0]] = self.color
+            next_piece(self, self.game)
+            pygame.mixer.Sound.play(self.game.sounds_effects["lock"])
+        elif dx_check:
+            self.block_pos = block_pos
+            if dx != 0:
+                pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
+            if dy != 0:
+                self.last_fall = pygame.time.get_ticks()
+
+        block_pos = []
+        block_rot = (self.block_rot + rot) % len(self.shapes)
+        block_center = 0
+        shape = self.shapes[block_rot]
+        for y, line in enumerate(shape):
+            for x, column in enumerate(line):
+                if column == "0" or column == "X":
+                    block_pos.append([self.block_pos[self.block_center][0] + self.offset[0] + x, self.block_pos[self.block_center][1] + self.offset[1] + y])
+                if column == "X":
+                    block_center = len(block_pos) - 1
+
+        for block in block_pos:
+            if not(0 <= block[0] <= 9) or block[1] >= 20 or block[1] >= 0 and self.game.grid[block[1]][block[0]] != (0, 0, 0):
+                rot_check = False
+        if rot_check:
+            self.block_pos = block_pos
+            self.block_center = block_center
+            self.block_rot = block_rot
+            if rot != 0:
+                pygame.mixer.Sound.play(self.game.sounds_effects["rotate"])
+
 
     def update_move(self, dx=0, dy=0, rot=0):
         kill = False
@@ -265,6 +333,13 @@ class Tetromino(pygame.sprite.Sprite):
                 kill = True
             elif not(0 <= block[0] + dx <= 9) or block[1] >= 0 and self.game.grid[block[1]][block[0]+dx] != (0, 0, 0):
                 move = False
+        dx_check, dy_check, rot_check = True, True, True
+        for block in self.block_pos:
+            if not(0 <= block[0] + dx <= 9 and block[1] + dy <= 19 and self.game.grid[block[1]+dy][block[0]+dx] == (0, 0, 0)):
+                dy_check = not(dy != 0)
+                dx_check = not(dx != 0)
+        print(dx_check == move and not dy_check == kill)
+        move, kill = dx_check, not dy_check
         if kill:
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
@@ -304,6 +379,6 @@ class Tetromino(pygame.sprite.Sprite):
     def update(self):
         self.get_keys()
 
-        if pygame.time.get_ticks() - self.last_fall >= self.game.fall_speed:
-            self.update_move(0, 1)
+        if False and pygame.time.get_ticks() - self.last_fall >= self.game.fall_speed:
+            self.update_test_2(0, 1)
             self.last_fall = pygame.time.get_ticks()
