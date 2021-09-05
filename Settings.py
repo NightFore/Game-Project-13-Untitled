@@ -7,7 +7,7 @@ from os import path
 project_title = "Untitled"
 screen_size = WIDTH, HEIGHT = 1280, 720
 FPS = 60
-default_volume = 5
+default_volume = 15
 
 """
     Colors
@@ -48,7 +48,7 @@ GAME_DICT = {
 }
 
 MUSIC_DICT = {
-    "main_menu": "PerituneMaterial_Whisper_loop.ogg"
+    "main_menu": "Tetris_theme.ogg"
 }
 
 FONT_DICT = {

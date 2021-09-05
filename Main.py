@@ -15,11 +15,18 @@ from Menu import *
 def init_main(game):
     game.main_dict = MAIN_DICT
     game.data_dict = game.main_dict["main"]
+    game.se_dict = game.main_dict["sound"]
+    game.shape_dict = game.main_dict["shape"]
+
     game.play_width = game.data_dict["play_width"]
     game.play_height = game.data_dict["play_height"]
     game.block_size = game.data_dict["block_size"]
     game.block_border_size = game.data_dict["block_border_size"]
     game.fall_speed = game.data_dict["fall_speed"]
+
+    game.sounds_effects = {}
+    for sounds in game.se_dict:
+        game.sounds_effects[sounds] = pygame.mixer.Sound(path.join(game.se_folder, game.se_dict[sounds]))
 
     game.grid = create_grid({})
     game.grid_pos = ((screen_size[0]-game.play_width)/2, screen_size[1]-game.play_height)
@@ -74,7 +81,7 @@ def clear_line(game):
 
 
 def get_shape(game):
-    return random.choice(list(game.main_dict["shape"]))
+    return random.choice(list(game.shape_dict))
 
 MAIN_DICT = {
     "main": {
@@ -90,6 +97,20 @@ MAIN_DICT = {
         "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
         "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
         "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
+    },
+
+    "sound": {
+        "move_tap": "se_maoudamashii_system_14.ogg",
+        "move_das": "se_maoudamashii_system_21.ogg",
+        "rotate": "se_maoudamashii_system_17.ogg",
+        "collide": "se_maoudamashii_noise_16.ogg",
+        "lock": "se_maoudamashii_fight_07.ogg",
+        "single": "se_maoudamashii_retro_04.ogg",
+        "double": "se_maoudamashii_retro_03.ogg",
+        "triple": "se_maoudamashii_retro_07.ogg",
+        "tetris": "se_maoudamashii_retro_14.ogg",
+        "level_up": "se_maoudamashii_retro_15.ogg",
+        "pause": "se_maoudamashii_retro_08.ogg",
     },
 
     "shape": {
@@ -204,15 +225,15 @@ class Tetromino(pygame.sprite.Sprite):
         self.init()
 
     def init(self):
+        self.shapes = self.game.shape_dict[self.item]
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
+        self.block_rot = 0
         self.block_center = 0
         self.offset = -2, -2
         self.pos.x = self.game.grid_pos[0] + self.pos[0]*self.game.block_size[0]
         self.pos.y = self.game.grid_pos[1] + self.pos[1]*self.game.block_size[1]
-        self.rot = 0
         self.last_fall = pygame.time.get_ticks()
         self.update_move()
-        self.update_shape()
         print(self.item)
 
     def draw(self):
@@ -236,27 +257,6 @@ class Tetromino(pygame.sprite.Sprite):
                     dx = 1
                 self.update_move(dx, dy, rot)
 
-    def update_shape(self, rot=0):
-        block_rot = (self.rot + rot) % len(self.game.main_dict["shape"][self.item])
-        shape = self.game.main_dict["shape"][self.item][block_rot]
-        block_pos = []
-        block_center = 0
-        for y, line in enumerate(shape):
-            for x, column in enumerate(line):
-                if column == "0" or column == "X":
-                    block_pos.append([self.block_pos[self.block_center][0] + self.offset[0] + x, self.block_pos[self.block_center][1] + self.offset[1] + y])
-                if column == "X":
-                    block_center = len(block_pos) - 1
-
-        verify = True
-        for block in block_pos:
-            if not(0 <= block[0] <= 9) or block[1] >= 20 or block[1] >= 0 and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                verify = False
-        if verify:
-            self.block_pos = block_pos
-            self.block_center = block_center
-            self.rot = block_rot
-
     def update_move(self, dx=0, dy=0, rot=0):
         kill = False
         move = True
@@ -277,6 +277,29 @@ class Tetromino(pygame.sprite.Sprite):
                 self.last_fall = pygame.time.get_ticks()
 
         self.update_shape(rot)
+
+    def update_shape(self, rot=0):
+        block_pos = []
+        block_rot = (self.block_rot + rot) % len(self.shapes)
+        block_center = 0
+        shape = self.shapes[block_rot]
+        for y, line in enumerate(shape):
+            for x, column in enumerate(line):
+                if column == "0" or column == "X":
+                    block_pos.append([self.block_pos[self.block_center][0] + self.offset[0] + x, self.block_pos[self.block_center][1] + self.offset[1] + y])
+                if column == "X":
+                    block_center = len(block_pos) - 1
+
+        verify = True
+        for block in block_pos:
+            if not(0 <= block[0] <= 9) or block[1] >= 20 or block[1] >= 0 and self.game.grid[block[1]][block[0]] != (0, 0, 0):
+                verify = False
+        if verify:
+            self.block_pos = block_pos
+            self.block_center = block_center
+            self.block_rot = block_rot
+
+        pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
 
     def update(self):
         self.get_keys()
