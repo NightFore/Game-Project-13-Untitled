@@ -379,6 +379,6 @@ class Tetromino(pygame.sprite.Sprite):
     def update(self):
         self.get_keys()
 
-        if False and pygame.time.get_ticks() - self.last_fall >= self.game.fall_speed:
+        if pygame.time.get_ticks() - self.last_fall >= self.game.fall_speed:
             self.update_test_2(0, 1)
             self.last_fall = pygame.time.get_ticks()
