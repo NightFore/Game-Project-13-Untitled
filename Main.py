@@ -83,8 +83,10 @@ def clear_line(game):
         if len(cleared_lines) == 4:
             pygame.mixer.Sound.play(game.sounds_effects["tetris"])
 
-def new_piece(game):
-    Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
+def new_piece(game, move_tap=False, last_dir=0):
+    Player = Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
+    Player.move_tap = move_tap
+    Player.last_dir = last_dir
 
 def get_shape(game):
     return random.choice(list(game.shape_dict))
@@ -232,10 +234,10 @@ class Tetromino(pygame.sprite.Sprite):
 
     def init(self):
         self.move_tap = False
+        self.last_dir = 0
         self.init_das_delay = 16
         self.das_delay = 6
-        self.last_dir = 0
-        self.last_das = self.init_das_delay
+        self.last_das = self.das_delay
         self.drop_delay = 2
         self.last_drop = self.drop_delay
         self.fall_delay = 30
@@ -277,6 +279,9 @@ class Tetromino(pygame.sprite.Sprite):
             self.last_fall = self.fall_delay
             self.last_drop = 0
             dy = 1
+        if dx == 0:
+            self.move_tap = False
+            self.last_dir = 0
         self.update_move(dx, dy, rot)
 
     def update_move(self, dx=0, dy=0, rot=0):
@@ -296,34 +301,37 @@ class Tetromino(pygame.sprite.Sprite):
             if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
                 move_check, lock_check = not(dx != 0), not(dy != 0)
 
-
+        if not lock_check and not move_check:
+            self.update_move(dy=dy)
+            lock_check = not lock_check
         if not lock_check:
             pygame.mixer.Sound.play(self.game.sounds_effects["lock"])
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
             clear_line(self.game)
-            new_piece(self.game)
+            new_piece(self.game, self.move_tap, self.last_dir)
             self.kill()
         elif move_check:
-            if dx != 0:
-                if not self.move_tap or self.last_dir != dx:
-                    pygame.mixer.Sound.play(self.game.sounds_effects["move_tap"])
-                    self.block_pos = block_pos
-                    self.last_das = self.init_das_delay
-                    self.last_dir = dx
-                    self.move_tap = True
-                elif self.last_das <= 0:
-                    pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
-                    self.block_pos = block_pos
-                    self.last_das = self.das_delay
+            if dx != 0 and dy != 0:
+                self.update_move(dx=dx)
+                self.update_move(dy=dy)
             else:
-                self.move_tap = False
-                self.last_dir = 0
-            if dy != 0:
-                if self.last_drop <= 0:
-                    self.block_pos = block_pos
-                    self.last_drop = self.drop_delay
-                    self.last_fall = self.fall_delay
+                if dx != 0:
+                    if not self.move_tap or self.last_dir != dx:
+                        pygame.mixer.Sound.play(self.game.sounds_effects["move_tap"])
+                        self.block_pos = block_pos
+                        self.last_das = self.init_das_delay
+                        self.last_dir = dx
+                        self.move_tap = True
+                    elif self.last_das <= 0:
+                        pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
+                        self.block_pos = block_pos
+                        self.last_das = self.das_delay
+                if dy != 0:
+                    if self.last_drop <= 0:
+                        self.block_pos = block_pos
+                        self.last_drop = self.drop_delay
+                        self.last_fall = self.fall_delay
             if rot != 0:
                 pygame.mixer.Sound.play(self.game.sounds_effects["rotate"])
                 self.block_pos = block_pos
