@@ -25,8 +25,10 @@ def init_main(game):
     game.fall_speed = game.data_dict["fall_speed"]
 
     game.sounds_effects = {}
-    for sounds in game.se_dict:
-        game.sounds_effects[sounds] = pygame.mixer.Sound(path.join(game.se_folder, game.se_dict[sounds]))
+    for sound in game.se_dict:
+        game.sounds_effects[sound] = pygame.mixer.Sound(path.join(game.se_folder, game.se_dict[sound]))
+    for sound in game.se_dict:
+        game.sounds_effects[sound].set_volume(default_sound_volume/100)
 
     game.grid = create_grid({})
     game.grid_pos = ((screen_size[0]-game.play_width)/2, screen_size[1]-game.play_height)
@@ -72,7 +74,6 @@ def clear_line(game):
 
     if cleared_lines:
         for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
-            print(i)
             for j in range(len(game.grid[i])):
                 game.grid[i][j] = game.grid[i-len(cleared_lines)][j]
         for i in range(len(cleared_lines)):
@@ -111,11 +112,11 @@ MAIN_DICT = {
         "move_das": "se_maoudamashii_system_21.ogg",
         "rotate": "se_maoudamashii_system_17.ogg",
         "collide": "se_maoudamashii_noise_16.ogg",
-        "lock": "se_maoudamashii_fight_07.ogg",
+        "lock": "se_maoudamashii_system_14.ogg", ### Change se_maoudamashii_fight_07
         "single": "se_maoudamashii_retro_04.ogg",
-        "double": "se_maoudamashii_retro_03.ogg",
-        "triple": "se_maoudamashii_retro_07.ogg",
-        "tetris": "se_maoudamashii_retro_14.ogg",
+        "double": "se_maoudamashii_retro_04.ogg", # se_maoudamashii_retro_03
+        "triple": "se_maoudamashii_retro_04.ogg", # se_maoudamashii_retro_07
+        "tetris": "se_maoudamashii_retro_04.ogg", # se_maoudamashii_retro_14
         "level_up": "se_maoudamashii_retro_15.ogg",
         "pause": "se_maoudamashii_retro_08.ogg",
     },
@@ -232,16 +233,25 @@ class Tetromino(pygame.sprite.Sprite):
         self.init()
 
     def init(self):
+        self.move_tap = [False, False]
+        self.init_das_delay = 16
+        self.das_delay = 6
+        self.last_dir = 0
+        self.last_das = self.init_das_delay
+        self.drop_delay = 2
+        self.last_drop = self.drop_delay
+
         self.shapes = self.game.shape_dict[self.item]
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
-        self.block_rot = 0
+        self.block_rot = -1
         self.block_center = 0
+        self.rot_check = True
         self.offset = -2, -2
         self.pos.x = self.game.grid_pos[0] + self.pos[0]*self.game.block_size[0]
         self.pos.y = self.game.grid_pos[1] + self.pos[1]*self.game.block_size[1]
         self.last_fall = pygame.time.get_ticks()
-        self.update_test_2()
-        print(self.item)
+        self.update_move(rot=1)
+        print("Shape: %s" % self.item)
 
     def draw(self):
         for block in self.block_pos:
@@ -251,57 +261,62 @@ class Tetromino(pygame.sprite.Sprite):
             self.game.gameDisplay.blit(self.surface, rect)
 
     def get_keys(self):
+        dx, dy, rot = 0, 0, 0
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            rot = 1
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            dy = 1
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and (self.last_dir == -1 or self.last_dir == 0):
+            dx = -1
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and (self.last_dir == 1 or self.last_dir == 0):
+            dx = 1
         for event in self.game.event:
-            if event.type == pygame.KEYDOWN:
-                dx, dy, rot = 0, 0, 0
+            if event.type == pygame.KEYUP:
                 if event.key == pygame.K_w or event.key == pygame.K_UP:
-                    rot = +1
-                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                    dy = 1
-                if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                    dx = -1
-                if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                    dx = 1
-                self.update_test_2(dx, dy, rot)
+                    self.rot_check = True
+        self.update_move(dx, dy, rot)
 
-    def update_test(self, dx=0, dy=0, rot=0):
-        dx_check, dy_check, rot_check = True, True, True
-        for block in self.block_pos:
-            if not(0 <= block[0] + dx <= 9 and block[1] + dy <= 19 and self.game.grid[block[1]+dy][block[0]+dx] == (0, 0, 0)):
-                dx_check, dy_check = not(dx != 0), not(dy != 0)
-        if not dy_check:
-            for block in self.block_pos:
-                self.game.grid[block[1]][block[0]] = self.color
-            next_piece(self, self.game)
-        elif dx_check:
-            for block in self.block_pos:
-                block[0] += dx
-                block[1] += dy
-            if dy != 0:
-                self.last_fall = pygame.time.get_ticks()
-
-        self.update_shape(rot)
-
-    def update_test_2(self, dx=0, dy=0, rot=0):
-        dx_check, dy_check, rot_check = True, True, True
+    def update_move(self, dx=0, dy=0, rot=0):
+        move_check, lock_check, rot_check, move = True, True, True, False
         block_pos = []
         for block in self.block_pos:
             block_pos.append(block[:])
         for block in block_pos:
             block[0], block[1] = block[0] + dx, block[1] + dy
             if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                dx_check, dy_check = not(dx != 0), not(dy != 0)
-        if not dy_check:
+                move_check, lock_check = not(dx != 0), not(dy != 0)
+        if not lock_check:
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
             next_piece(self, self.game)
             pygame.mixer.Sound.play(self.game.sounds_effects["lock"])
-        elif dx_check:
-            self.block_pos = block_pos
+        elif move_check:
             if dx != 0:
-                pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
+                if not(self.move_tap[0] or self.move_tap[1]) or self.last_dir != dx:
+                    self.last_das = self.init_das_delay
+                    self.move_tap = [dx == -1, dx == 1]
+                    self.last_dir = dx
+                    move = True
+                elif self.last_das <= 0:
+                    self.last_das = self.das_delay
+                    move = True
+                else:
+                    self.last_das -= 1
+            else:
+                self.move_tap = [False, False]
+                self.last_dir = 0
             if dy != 0:
                 self.last_fall = pygame.time.get_ticks()
+                if self.last_drop <= 0:
+                    self.last_drop = self.drop_delay
+                    move = True
+                else:
+                    self.last_drop -= 1
+        if move:
+            self.block_pos = block_pos
+            pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
+
 
         block_pos = []
         block_rot = (self.block_rot + rot) % len(self.shapes)
@@ -317,68 +332,17 @@ class Tetromino(pygame.sprite.Sprite):
         for block in block_pos:
             if not(0 <= block[0] <= 9) or block[1] >= 20 or block[1] >= 0 and self.game.grid[block[1]][block[0]] != (0, 0, 0):
                 rot_check = False
-        if rot_check:
+
+        if rot != 0 and rot_check and self.rot_check:
             self.block_pos = block_pos
             self.block_center = block_center
             self.block_rot = block_rot
-            if rot != 0:
-                pygame.mixer.Sound.play(self.game.sounds_effects["rotate"])
-
-
-    def update_move(self, dx=0, dy=0, rot=0):
-        kill = False
-        move = True
-        for block in self.block_pos:
-            if block[1] + dy >= 20 or block[1] >= 0 and self.game.grid[block[1]+dy][block[0]] != (0, 0, 0):
-                kill = True
-            elif not(0 <= block[0] + dx <= 9) or block[1] >= 0 and self.game.grid[block[1]][block[0]+dx] != (0, 0, 0):
-                move = False
-        dx_check, dy_check, rot_check = True, True, True
-        for block in self.block_pos:
-            if not(0 <= block[0] + dx <= 9 and block[1] + dy <= 19 and self.game.grid[block[1]+dy][block[0]+dx] == (0, 0, 0)):
-                dy_check = not(dy != 0)
-                dx_check = not(dx != 0)
-        print(dx_check == move and not dy_check == kill)
-        move, kill = dx_check, not dy_check
-        if kill:
-            for block in self.block_pos:
-                self.game.grid[block[1]][block[0]] = self.color
-            next_piece(self, self.game)
-        elif move:
-            for block in self.block_pos:
-                block[0] += dx
-                block[1] += dy
-            if dy != 0:
-                self.last_fall = pygame.time.get_ticks()
-
-        self.update_shape(rot)
-
-    def update_shape(self, rot=0):
-        block_pos = []
-        block_rot = (self.block_rot + rot) % len(self.shapes)
-        block_center = 0
-        shape = self.shapes[block_rot]
-        for y, line in enumerate(shape):
-            for x, column in enumerate(line):
-                if column == "0" or column == "X":
-                    block_pos.append([self.block_pos[self.block_center][0] + self.offset[0] + x, self.block_pos[self.block_center][1] + self.offset[1] + y])
-                if column == "X":
-                    block_center = len(block_pos) - 1
-
-        verify = True
-        for block in block_pos:
-            if not(0 <= block[0] <= 9) or block[1] >= 20 or block[1] >= 0 and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                verify = False
-        if verify:
-            self.block_pos = block_pos
-            self.block_center = block_center
-            self.block_rot = block_rot
-
-        pygame.mixer.Sound.play(self.game.sounds_effects["move_das"])
+            self.rot_check = False
+            pygame.mixer.Sound.play(self.game.sounds_effects["rotate"])
 
     def update(self):
         self.get_keys()
 
-        if pygame.time.get_ticks() - self.last_fall >= self.game.fall_speed:
-            self.update_test_2(0, 1)
+        if False and pygame.time.get_ticks() - self.last_fall >= self.game.fall_speed:
+            self.update_move(0, 1)
             self.last_fall = pygame.time.get_ticks()
