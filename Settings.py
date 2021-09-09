@@ -47,16 +47,3 @@ GAME_DICT = {
     "color": {
     }
 }
-
-MUSIC_DICT = {
-    "main_menu": "Tetris_theme.ogg"
-}
-
-FONT_DICT = {
-}
-
-UI_DICT = {
-}
-
-BUTTON_DICT = {
-}

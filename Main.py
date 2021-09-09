@@ -12,21 +12,18 @@ from Settings import *
 
 
 def init_main(game):
-    game.main_dict = MAIN_DICT
-    game.data_dict = game.main_dict["main"]
-    game.se_dict = game.main_dict["sound"]
     game.shape_dict = game.main_dict["shape"]
 
-    game.play_width = game.data_dict["play_width"]
-    game.play_height = game.data_dict["play_height"]
-    game.block_size = game.data_dict["block_size"]
-    game.block_border_size = game.data_dict["block_border_size"]
-    game.fall_speed = game.data_dict["fall_speed"]
+    game.play_width = game.settings_dict["play_width"]
+    game.play_height = game.settings_dict["play_height"]
+    game.block_size = game.settings_dict["block_size"]
+    game.block_border_size = game.settings_dict["block_border_size"]
+    game.fall_speed = game.settings_dict["fall_speed"]
 
     game.sounds_effects = {}
-    for sound in game.se_dict:
-        game.sounds_effects[sound] = pygame.mixer.Sound(path.join(game.se_folder, game.se_dict[sound]))
-    for sound in game.se_dict:
+    for sound in game.sound_dict:
+        game.sounds_effects[sound] = pygame.mixer.Sound(path.join(game.se_folder, game.sound_dict[sound]))
+    for sound in game.sound_dict:
         game.sounds_effects[sound].set_volume(default_sound_volume/100)
 
     game.grid = create_grid({})
@@ -35,7 +32,6 @@ def init_main(game):
     game.block_surface_rect = (game.block_border_size[0], game.block_border_size[1], game.block_size[0] - 2*game.block_border_size[0], game.block_size[1] - 2*game.block_border_size[1])
 
     game.tetrominoes = pygame.sprite.Group()
-    # game.menu_dict = game.main_dict["menu"]
 
 def create_grid(locked_pos={}):
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
@@ -91,8 +87,27 @@ def new_piece(game, move_tap=False, last_dir=0, hard_drop_check=True):
 def get_shape(game):
     return random.choice(list(game.shape_dict))
 
+def init_menu(game, menu, clear=True):
+    menu_dict = game.main_dict["menu"][menu]
+    if clear:
+        clear_menu(game)
+
+    game.update_music(game.music_dict[menu_dict["music"]])
+    game.update_background(game.background_dict[menu_dict["background"]])
+
+def clear_menu(game):
+    for sprite in game.all_sprites:
+        sprite.kill()
+
+def main_menu(game, menu):
+    init_menu(game, menu)
+    new_piece(game)
+
+def pause_menu(game, menu):
+    game.paused = not game.paused
+
 MAIN_DICT = {
-    "main": {
+    "settings": {
         "play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2), "fall_speed": 2000
     },
 
@@ -119,13 +134,6 @@ MAIN_DICT = {
         "tetris": "se_maoudamashii_retro_04.ogg", # se_maoudamashii_retro_14
         "level_up": "se_maoudamashii_retro_15.ogg",
         "pause": "se_maoudamashii_retro_08.ogg",
-    },
-
-    "menu": {
-        "main_menu": {
-            "ui": {},
-            "button": {},
-        }
     },
 
     "shape": {
@@ -224,6 +232,30 @@ MAIN_DICT = {
                '.0X..',
                '..0..',
                '.....']]
+    },
+
+    "menu": {
+        "main_menu": {
+            "call": main_menu,
+            "background": "default",
+            "music": "default",
+            "ui": {},
+            "button": {},
+        },
+        "pause_menu": {
+            "call": pause_menu,
+        },
+    },
+
+    "background": {
+        "default": {
+            "color": DARK_SKY_BLUE,
+            "image": None,
+        },
+    },
+
+    "music": {
+        "default": "Tetris_theme.ogg",
     }
 }
 
@@ -362,32 +394,3 @@ class Tetromino(pygame.sprite.Sprite):
     def update(self):
         self.get_keys()
 
-def init_menu(game, menu, clear=True, ui=True, button=True):
-    if clear:
-        clear_menu(game)
-    if ui:
-        if menu in game.ui_dict:
-            for ui in game.ui_dict[menu]:
-                UI(game, game.ui_dict, game.uis, data=menu, item=ui)
-    if button:
-        if menu in game.button_dict:
-            for button in game.button_dict[menu]:
-                Button(game, game.button_dict, game.buttons, data=menu, item=button)
-
-def clear_menu(game):
-    for sprite in game.all_sprites:
-        sprite.kill()
-
-def main_menu(game, menu):
-    init_menu(game, menu)
-    new_piece(game)
-
-def pause_menu(game, menu):
-    game.paused = not game.paused
-
-
-
-MENU_DICT = {
-    "main_menu": main_menu,
-    "pause_menu": pause_menu,
-}

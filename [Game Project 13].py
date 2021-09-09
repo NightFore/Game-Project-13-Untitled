@@ -81,41 +81,16 @@ class Game:
 
         # Dict
         self.game_dict = GAME_DICT
-        self.menu_dict = MENU_DICT
-        self.music_dict = MUSIC_DICT
-        self.font_dict = FONT_DICT
-        self.ui_dict = UI_DICT
-        self.button_dict = BUTTON_DICT
-
-        # Graphics
-        self.background_dict = self.game_dict["background"]
-        self.background_image = self.background_dict["background_image"]
-        self.background_color = self.background_dict["background_color"]
-        self.menu = "main_menu"
-
-        # Music
-        self.music = self.music_dict["main_menu"]
-
-        # Font
-        self.font = pygame.font.Font(None, 100)
-        for font in self.font_dict:
-            self.load_font(font)
-
-        # Color
-        self.debug_color = CYAN
+        self.main_dict = MAIN_DICT
+        self.menu_dict = self.main_dict["menu"]
+        self.settings_dict = self.main_dict["settings"]
+        self.background_dict = self.main_dict["background"]
+        self.sound_dict = self.main_dict["sound"]
+        self.music_dict = self.main_dict["music"]
 
         # Pause Screen
         self.dim_screen = pygame.Surface(self.gameDisplay.get_size()).convert_alpha()
         self.dim_screen.fill((100, 100, 100, 120))
-
-        # Image Effects
-        self.effect_images = {}
-
-        # Sound Effects
-        self.sounds_effects = {}
-
-        # Sound Voices
-        self.sounds_voice = {}
 
     def new(self):
         self.all_sprites = pygame.sprite.LayeredUpdates()
@@ -126,9 +101,13 @@ class Game:
         self.walls = pygame.sprite.Group()
 
     def init_game(self):
+        self.debug_color = CYAN
         self.debug_mode = True
         self.paused = False
-        self.update_music(self.music)
+        self.background_image = None
+        self.background_color = None
+        self.music = None
+        self.menu = "main_menu"
         self.update_menu(self.menu)
 
     # Game Loop ----------------------- #
@@ -199,18 +178,23 @@ class Game:
         # Update ---------------------- #
         self.gameDisplay.update(self.event)
 
-    def update_background(self, background):
-        if background is not None:
-            background = load_image(self.graphics_folder, background)
-        if self.background_image != background:
-            self.background_image = background
+    def update_background(self, background_dict):
+        color = background_dict["color"]
+        if color is not None and self.background_color != color:
+            self.background_color = color
+
+        image = background_dict["image"]
+        if image is not None:
+            image = load_image(self.graphics_folder, image)
+        if self.background_image != image:
+            self.background_image = image
 
     def update_menu(self, menu=None):
         if menu is not None:
             self.menu = menu
-            self.menu_dict[menu](self, menu)
+            self.menu_dict[menu]["call"](self, menu)
         else:
-            self.menu_dict[self.menu](self, self.menu)
+            self.menu_dict[self.menu]["call"](self, self.menu)
 
     def update_music(self, music):
         if music is not None:
