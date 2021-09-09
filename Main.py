@@ -285,7 +285,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.update_move(dx, dy, rot)
 
     def update_move(self, dx=0, dy=0, rot=0):
-        move_check, lock_check = True, True
+        move_check, lock_check, rot_check = True, True, True
         block_pos = []
         block_rot = (self.block_rot + rot) % len(self.shapes)
         block_center = 0
@@ -299,7 +299,7 @@ class Tetromino(pygame.sprite.Sprite):
 
         for block in block_pos:
             if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                move_check, lock_check = not(dx != 0), not(dy != 0)
+                move_check, lock_check, rot_check = not(dx != 0), not(dy != 0), False
 
         if not lock_check and not move_check:
             self.update_move(dy=dy)
@@ -311,10 +311,10 @@ class Tetromino(pygame.sprite.Sprite):
             clear_line(self.game)
             new_piece(self.game, self.move_tap, self.last_dir)
             self.kill()
-        elif move_check:
+        elif move_check and rot_check:
             if dx != 0 and dy != 0:
-                self.update_move(dx=dx)
                 self.update_move(dy=dy)
+                self.update_move(dx=dx)
             else:
                 if dx != 0:
                     if not self.move_tap or self.last_dir != dx:
