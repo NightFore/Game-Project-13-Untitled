@@ -10,7 +10,6 @@ from Main import *
 from Class import *
 from Function import *
 from Settings import *
-from Menu import *
 
 vec = pygame.math.Vector2
 
@@ -126,8 +125,7 @@ class Game:
         self.entities = pygame.sprite.Group()
         self.walls = pygame.sprite.Group()
 
-        self.level = Level(self)
-        self.level_mode = False
+    def init_game(self):
         self.debug_mode = True
         self.paused = False
         self.update_music(self.music)
@@ -135,8 +133,9 @@ class Game:
 
     # Game Loop ----------------------- #
     def run(self):
-        self.playing = True
         init_main(self)
+        self.init_game()
+        self.playing = True
         while self.playing:
             self.dt = self.gameDisplay.clock.tick(FPS) / 1000
             self.events()
@@ -177,7 +176,6 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
-        self.level.update()
 
     def draw(self):
         # Background ------------------ #

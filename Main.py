@@ -9,7 +9,6 @@ from ScaledGame import *
 from Class import *
 from Function import *
 from Settings import *
-from Menu import *
 
 
 def init_main(game):
@@ -36,7 +35,7 @@ def init_main(game):
     game.block_surface_rect = (game.block_border_size[0], game.block_border_size[1], game.block_size[0] - 2*game.block_border_size[0], game.block_size[1] - 2*game.block_border_size[1])
 
     game.tetrominoes = pygame.sprite.Group()
-    new_piece(game)
+    # game.menu_dict = game.main_dict["menu"]
 
 def create_grid(locked_pos={}):
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
@@ -83,10 +82,11 @@ def clear_line(game):
         if len(cleared_lines) == 4:
             pygame.mixer.Sound.play(game.sounds_effects["tetris"])
 
-def new_piece(game, move_tap=False, last_dir=0):
+def new_piece(game, move_tap=False, last_dir=0, hard_drop_check=True):
     Player = Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
     Player.move_tap = move_tap
     Player.last_dir = last_dir
+    Player.hard_drop_check = hard_drop_check
 
 def get_shape(game):
     return random.choice(list(game.shape_dict))
@@ -119,6 +119,13 @@ MAIN_DICT = {
         "tetris": "se_maoudamashii_retro_04.ogg", # se_maoudamashii_retro_14
         "level_up": "se_maoudamashii_retro_15.ogg",
         "pause": "se_maoudamashii_retro_08.ogg",
+    },
+
+    "menu": {
+        "main_menu": {
+            "ui": {},
+            "button": {},
+        }
     },
 
     "shape": {
@@ -242,6 +249,8 @@ class Tetromino(pygame.sprite.Sprite):
         self.last_drop = self.drop_delay
         self.fall_delay = 30
         self.last_fall = self.fall_delay
+        self.hard_drop_check = True
+        self.drop_check = True
 
         self.shapes = self.game.shape_dict[self.item]
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
@@ -272,6 +281,16 @@ class Tetromino(pygame.sprite.Sprite):
             dx = -1
         if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and (self.last_dir == 1 or self.last_dir == 0):
             dx = 1
+        if keys[pygame.K_SPACE]:
+            if self.hard_drop_check:
+                self.hard_drop_check = False
+                for _ in range(20):
+                    if self.drop_check:
+                        self.last_drop = 0
+                        self.update_move(dy=1)
+        else:
+            self.hard_drop_check = True
+
         self.last_das -= 1
         self.last_drop -= 1
         self.last_fall -= 1
@@ -309,7 +328,8 @@ class Tetromino(pygame.sprite.Sprite):
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
             clear_line(self.game)
-            new_piece(self.game, self.move_tap, self.last_dir)
+            new_piece(self.game, self.move_tap, self.last_dir, self.hard_drop_check)
+            self.drop_check = False
             self.kill()
         elif move_check and rot_check:
             if dx != 0 and dy != 0:
@@ -341,3 +361,33 @@ class Tetromino(pygame.sprite.Sprite):
 
     def update(self):
         self.get_keys()
+
+def init_menu(game, menu, clear=True, ui=True, button=True):
+    if clear:
+        clear_menu(game)
+    if ui:
+        if menu in game.ui_dict:
+            for ui in game.ui_dict[menu]:
+                UI(game, game.ui_dict, game.uis, data=menu, item=ui)
+    if button:
+        if menu in game.button_dict:
+            for button in game.button_dict[menu]:
+                Button(game, game.button_dict, game.buttons, data=menu, item=button)
+
+def clear_menu(game):
+    for sprite in game.all_sprites:
+        sprite.kill()
+
+def main_menu(game, menu):
+    init_menu(game, menu)
+    new_piece(game)
+
+def pause_menu(game, menu):
+    game.paused = not game.paused
+
+
+
+MENU_DICT = {
+    "main_menu": main_menu,
+    "pause_menu": pause_menu,
+}
