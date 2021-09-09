@@ -80,13 +80,18 @@ class Game:
         self.font_folder = path.join(self.data_folder, "fonts")
 
         # Dict
-        self.game_dict = GAME_DICT
         self.main_dict = MAIN_DICT
+        self.game_dict = self.main_dict["game"]
         self.menu_dict = self.main_dict["menu"]
-        self.settings_dict = self.main_dict["settings"]
         self.background_dict = self.main_dict["background"]
-        self.sound_dict = self.main_dict["sound"]
         self.music_dict = self.main_dict["music"]
+        self.sound_dict = self.main_dict["sound"]
+
+        self.sound_effects = {}
+        for sound in self.sound_dict:
+            self.sound_effects[sound] = pygame.mixer.Sound(path.join(self.se_folder, self.sound_dict[sound]))
+        for sound in self.sound_dict:
+            self.sound_effects[sound].set_volume(default_sound_volume / 100)
 
         # Pause Screen
         self.dim_screen = pygame.Surface(self.gameDisplay.get_size()).convert_alpha()

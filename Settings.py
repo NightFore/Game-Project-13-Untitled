@@ -28,22 +28,3 @@ CYAN = 0, 255, 255
 
 LIGHT_SKY_BLUE = 140, 205, 245
 DARK_SKY_BLUE = 15, 160, 240
-
-"""
-    Game Settings
-"""
-GAME_DICT = {
-    "background": {
-        "background_image": None,
-        "background_color": DARK_SKY_BLUE,
-    },
-
-    "HUD": {
-    },
-
-    "font": {
-    },
-
-    "color": {
-    }
-}
