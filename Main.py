@@ -12,19 +12,28 @@ from Settings import *
 
 
 def init_main(game):
+    game.tetrominoes = pygame.sprite.Group()
     game.shape_dict = game.main_dict["shape"]
     game.play_width = game.game_dict["play_width"]
     game.play_height = game.game_dict["play_height"]
     game.block_size = game.game_dict["block_size"]
     game.block_border_size = game.game_dict["block_border_size"]
-    game.fall_speed = game.game_dict["fall_speed"]
-
-    game.grid = create_grid({})
-    game.grid_pos = ((screen_size[0]-game.play_width)/2, screen_size[1]-game.play_height)
     game.block_surface = pygame.Surface(game.block_size)
     game.block_surface_rect = (game.block_border_size[0], game.block_border_size[1], game.block_size[0] - 2*game.block_border_size[0], game.block_size[1] - 2*game.block_border_size[1])
+    new_game(game)
 
-    game.tetrominoes = pygame.sprite.Group()
+def new_game(game):
+    game.grid = create_grid()
+    game.grid_pos = ((screen_size[0]-game.play_width)/2, screen_size[1]-game.play_height)
+    new_piece(game)
+
+def new_piece(game, move_tap=False, last_dir=0, hard_drop_check=True):
+    for tetromino in game.tetrominoes:
+        tetromino.kill()
+    Player = Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
+    Player.move_tap = move_tap
+    Player.last_dir = last_dir
+    Player.hard_drop_check = hard_drop_check
 
 def create_grid(locked_pos={}):
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
@@ -70,12 +79,6 @@ def clear_line(game):
             pygame.mixer.Sound.play(game.sound_effects["triple"])
         if len(cleared_lines) == 4:
             pygame.mixer.Sound.play(game.sound_effects["tetris"])
-
-def new_piece(game, move_tap=False, last_dir=0, hard_drop_check=True):
-    Player = Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
-    Player.move_tap = move_tap
-    Player.last_dir = last_dir
-    Player.hard_drop_check = hard_drop_check
 
 def get_shape(game):
     return random.choice(list(game.shape_dict))
@@ -172,12 +175,11 @@ class Tetromino(pygame.sprite.Sprite):
             self.update_move(dy=dy)
         elif not lock_check:
             pygame.mixer.Sound.play(self.game.sound_effects["lock"])
+            self.drop_check = False
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
             clear_line(self.game)
             new_piece(self.game, self.move_tap, self.last_dir, self.hard_drop_check)
-            self.drop_check = False
-            self.kill()
         elif move_check and rot_check:
             if dx != 0 and dy != 0:
                 self.update_move(dy=dy)
@@ -219,32 +221,23 @@ def init_menu(game, menu, clear=True):
     game.update_music(game.music_dict[menu_dict["music"]])
     game.update_background(game.background_dict[menu_dict["background"]])
 
+    for button in game.button_dict[menu]:
+        Button(game, game.button_dict, game.buttons, data=menu, item=button)
+
 def clear_menu(game):
     for sprite in game.all_sprites:
         sprite.kill()
 
 def main_menu(game, menu):
     init_menu(game, menu)
-    new_piece(game)
+    new_game(game)
 
 def pause_menu(game, menu):
     game.paused = not game.paused
 
 MAIN_DICT = {
     "game": {
-        "play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2), "fall_speed": 2000
-    },
-    "menu": {
-        "main_menu": {
-            "call": main_menu,
-            "background": "default",
-            "music": "default",
-            "ui": {},
-            "button": {},
-        },
-        "pause_menu": {
-            "call": pause_menu,
-        },
+        "play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2)
     },
     "background": {
         "default": {
@@ -267,6 +260,37 @@ MAIN_DICT = {
         "tetris": "se_maoudamashii_retro_04.ogg",  # se_maoudamashii_retro_14
         "level_up": "se_maoudamashii_retro_15.ogg",
         "pause": "se_maoudamashii_retro_08.ogg",
+    },
+    "font": {
+        "LiberationSerif": {"ttf": "LiberationSerif-Regular.ttf", "size": 40}
+    },
+    "menu": {
+        "main_menu": {
+            "call": main_menu,
+            "background": "default",
+            "music": "default",
+            "ui": {},
+            "button": {},
+        },
+        "pause_menu": {
+            "call": pause_menu,
+        },
+    },
+    "button": {
+        "type": {
+            "type_1": {
+                "align": "nw", "size": (280, 50),
+                "border": True, "border_size": (5, 5), "border_color": BLACK,
+                "font": "LiberationSerif", "font_color": WHITE,
+                "inactive_color": LIGHT_SKY_BLUE, "active_color": DARK_SKY_BLUE,
+                "sound_active": None, "sound_action": None},
+        },
+        "main_menu": {
+            "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "variable": "sprite.game", "action": new_game},
+            "load_game": {"type": "type_1", "pos": (20, 90), "text": "WIP"},
+            "options": {"type": "type_1", "pos": (20, 160), "text": "WIP"},
+            "exit": {"type": "type_1", "pos": (20, 230), "text": "Exit", "action": "sprite.game.quit_game"},
+        },
     },
     "tetromino": {
         "settings": {"pos": (4, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},

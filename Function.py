@@ -25,9 +25,16 @@ def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=Non
 
     # Arguments Settings ---------- #
     if "variable" in sprite.object and sprite.variable is None:
-        sprite.variable = sprite.object["variable"]
+        if isinstance(sprite.object["variable"], str):
+            sprite.variable = eval(sprite.object["variable"])
+            print(sprite.variable)
+        else:
+            sprite.variable = sprite.object["variable"]
     if "action" in sprite.object and sprite.action is None:
-        sprite.action = eval(sprite.object["action"])
+        if isinstance(sprite.object["action"], str):
+            sprite.action = eval(sprite.object["action"])
+        else:
+            sprite.action = sprite.object["action"]
 
     # Settings
     sprite.pos = sprite.object["pos"]
@@ -35,7 +42,6 @@ def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=Non
     sprite.center = sprite.settings["align"]
     sprite.surface = pygame.Surface(sprite.size)
     sprite.rect = sprite.game.align_rect(sprite.surface, sprite.pos[0], sprite.pos[1], sprite.center)
-    print(sprite.pos)
 
     # Border
     sprite.border_size = sprite.settings["border_size"]
