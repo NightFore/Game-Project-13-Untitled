@@ -116,6 +116,7 @@ class Game:
         self.debug_color = CYAN
         self.debug_mode = True
         self.paused = False
+        self.pause_check = True
         self.background_image = None
         self.background_color = None
         self.music = None
@@ -161,9 +162,18 @@ class Game:
                 if event.key == pygame.K_ESCAPE:
                     self.quit_game()
                 if event.key == pygame.K_p:
-                    self.paused = not self.paused
+                    if self.pause_check:
+                        self.paused = not self.paused
+                    if self.paused:
+                        pygame.mixer.music.pause()
+                    else:
+                        pygame.mixer.music.unpause()
+                    self.pause_check = False
                 if event.key == pygame.K_h:
                     self.debug_mode = not self.debug_mode
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_p:
+                    self.pause_check = True
 
     def update(self):
         self.all_sprites.update()

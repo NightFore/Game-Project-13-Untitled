@@ -23,6 +23,9 @@ def init_main(game):
     new_game(game)
 
 def new_game(game):
+    game.line_count = 0
+    game.start_level = 0
+    game.level = 0
     game.grid = create_grid()
     game.grid_pos = ((screen_size[0]-game.play_width)/2, screen_size[1]-game.play_height)
     new_piece(game)
@@ -34,6 +37,36 @@ def new_piece(game, move_tap=False, last_dir=0, hard_drop_check=True):
     Player.move_tap = move_tap
     Player.last_dir = last_dir
     Player.hard_drop_check = hard_drop_check
+
+def clear_line(game):
+    cleared_lines = []
+    for i in range(len(game.grid)):
+        clear = True
+        for j in range(len(game.grid[i])):
+            if game.grid[i][j] == (0, 0, 0):
+                clear = False
+        if clear:
+            cleared_lines.append(i)
+
+    if cleared_lines:
+        game.line_count += len(cleared_lines)
+        for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
+            for j in range(len(game.grid[i])):
+                game.grid[i][j] = game.grid[i-len(cleared_lines)][j]
+        for i in range(len(cleared_lines)):
+            for j in range(len(game.grid[0])):
+                game.grid[i][j] = (0, 0, 0)
+        if len(cleared_lines) == 1:
+            pygame.mixer.Sound.play(game.sound_effects["single"])
+        if len(cleared_lines) == 2:
+            pygame.mixer.Sound.play(game.sound_effects["double"])
+        if len(cleared_lines) == 3:
+            pygame.mixer.Sound.play(game.sound_effects["triple"])
+        if len(cleared_lines) == 4:
+            pygame.mixer.Sound.play(game.sound_effects["tetris"])
+
+    game.level = int((game.line_count - (game.start_level * 10))/10)
+    print(game.line_count, game.start_level, game.level)
 
 def create_grid(locked_pos={}):
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
@@ -54,32 +87,6 @@ def draw_grid(game):
             game.block_surface = init_surface(game.block_surface, game.block_surface_rect, game.grid[i][j], (150, 150, 150))
             game.gameDisplay.blit(game.block_surface, (game.grid_pos[0] + dx, game.grid_pos[1] + dy))
 
-def clear_line(game):
-    cleared_lines = []
-    for i in range(len(game.grid)):
-        clear = True
-        for j in range(len(game.grid[i])):
-            if game.grid[i][j] == (0, 0, 0):
-                clear = False
-        if clear:
-            cleared_lines.append(i)
-
-    if cleared_lines:
-        for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
-            for j in range(len(game.grid[i])):
-                game.grid[i][j] = game.grid[i-len(cleared_lines)][j]
-        for i in range(len(cleared_lines)):
-            for j in range(len(game.grid[0])):
-                game.grid[i][j] = (0, 0, 0)
-        if len(cleared_lines) == 1:
-            pygame.mixer.Sound.play(game.sound_effects["single"])
-        if len(cleared_lines) == 2:
-            pygame.mixer.Sound.play(game.sound_effects["double"])
-        if len(cleared_lines) == 3:
-            pygame.mixer.Sound.play(game.sound_effects["triple"])
-        if len(cleared_lines) == 4:
-            pygame.mixer.Sound.play(game.sound_effects["tetris"])
-
 def get_shape(game):
     return random.choice(list(game.shape_dict))
 
@@ -98,7 +105,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.last_das = self.das_delay
         self.drop_delay = 2
         self.last_drop = self.drop_delay
-        self.fall_delay = 30
+        self.fall_delay = 48
         self.last_fall = self.fall_delay
         self.hard_drop_check = True
         self.drop_check = True

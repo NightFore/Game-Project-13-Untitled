@@ -27,7 +27,6 @@ def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=Non
     if "variable" in sprite.object and sprite.variable is None:
         if isinstance(sprite.object["variable"], str):
             sprite.variable = eval(sprite.object["variable"])
-            print(sprite.variable)
         else:
             sprite.variable = sprite.object["variable"]
     if "action" in sprite.object and sprite.action is None:
