@@ -189,6 +189,16 @@ def update_bobbing(sprite):
 """
     Miscellaneous
 """
+def create_grid(locked_pos={}):
+    grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
+
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            if (j, i) in locked_pos:
+                c = locked_pos[(j, i)]
+                grid[i][j] = c
+    return grid
+
 def load_file(path, image=False):
     file = []
     for file_name in os.listdir(path):

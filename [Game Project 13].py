@@ -176,6 +176,7 @@ class Main:
                     self.pause_check = True
 
     def update(self):
+        self.game.update()
         self.all_sprites.update()
 
     def draw(self):
@@ -185,8 +186,8 @@ class Main:
         if self.background_color is not None:
             self.gameDisplay.fill(self.background_color)
 
-        # WIP ------------------------- #
-        draw_grid(self)
+        # Game ------------------------ #
+        self.game.draw()
 
         # Sprites --------------------- #
         for sprite in self.all_sprites:
