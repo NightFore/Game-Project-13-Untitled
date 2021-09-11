@@ -10,63 +10,67 @@ from Class import *
 from Function import *
 from Settings import *
 
+class Game:
+    def __init__(self, main):
+        pass
 
-def init_main(game):
-    game.tetrominoes = pygame.sprite.Group()
-    game.shape_dict = game.main_dict["shape"]
-    game.play_width = game.game_dict["play_width"]
-    game.play_height = game.game_dict["play_height"]
-    game.block_size = game.game_dict["block_size"]
-    game.block_border_size = game.game_dict["block_border_size"]
-    game.block_surface = pygame.Surface(game.block_size)
-    game.block_surface_rect = (game.block_border_size[0], game.block_border_size[1], game.block_size[0] - 2*game.block_border_size[0], game.block_size[1] - 2*game.block_border_size[1])
-    new_game(game)
 
-def new_game(game):
-    game.line_count = 0
-    game.start_level = 0
-    game.level = 0
-    game.grid = create_grid()
-    game.grid_pos = ((screen_size[0]-game.play_width)/2, screen_size[1]-game.play_height)
-    new_piece(game)
+def init_main(main):
+    main.tetrominoes = pygame.sprite.Group()
+    main.shape_dict = main.main_dict["shape"]
+    main.play_width = main.game_dict["play_width"]
+    main.play_height = main.game_dict["play_height"]
+    main.block_size = main.game_dict["block_size"]
+    main.block_border_size = main.game_dict["block_border_size"]
+    main.block_surface = pygame.Surface(main.block_size)
+    main.block_surface_rect = (main.block_border_size[0], main.block_border_size[1], main.block_size[0] - 2*main.block_border_size[0], main.block_size[1] - 2*main.block_border_size[1])
+    new_game(main)
 
-def new_piece(game, move_tap=False, last_dir=0, hard_drop_check=True):
-    for tetromino in game.tetrominoes:
+def new_game(main):
+    main.line_count = 0
+    main.start_level = 0
+    main.level = 0
+    main.grid = create_grid()
+    main.grid_pos = ((screen_size[0]-main.play_width)/2, screen_size[1]-main.play_height)
+    new_piece(main)
+
+def new_piece(main, move_tap=False, last_dir=0, hard_drop_check=True):
+    for tetromino in main.tetrominoes:
         tetromino.kill()
-    Player = Tetromino(game, game.main_dict, game.tetrominoes, data="tetromino", item=get_shape(game))
+    Player = Tetromino(main, main.main_dict, main.tetrominoes, data="tetromino", item=get_shape(main))
     Player.move_tap = move_tap
     Player.last_dir = last_dir
     Player.hard_drop_check = hard_drop_check
 
-def clear_line(game):
+def clear_line(main):
     cleared_lines = []
-    for i in range(len(game.grid)):
+    for i in range(len(main.grid)):
         clear = True
-        for j in range(len(game.grid[i])):
-            if game.grid[i][j] == (0, 0, 0):
+        for j in range(len(main.grid[i])):
+            if main.grid[i][j] == (0, 0, 0):
                 clear = False
         if clear:
             cleared_lines.append(i)
 
     if cleared_lines:
-        game.line_count += len(cleared_lines)
+        main.line_count += len(cleared_lines)
         for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
-            for j in range(len(game.grid[i])):
-                game.grid[i][j] = game.grid[i-len(cleared_lines)][j]
+            for j in range(len(main.grid[i])):
+                main.grid[i][j] = main.grid[i-len(cleared_lines)][j]
         for i in range(len(cleared_lines)):
-            for j in range(len(game.grid[0])):
-                game.grid[i][j] = (0, 0, 0)
+            for j in range(len(main.grid[0])):
+                main.grid[i][j] = (0, 0, 0)
         if len(cleared_lines) == 1:
-            pygame.mixer.Sound.play(game.sound_effects["single"])
+            pygame.mixer.Sound.play(main.sound_effects["single"])
         if len(cleared_lines) == 2:
-            pygame.mixer.Sound.play(game.sound_effects["double"])
+            pygame.mixer.Sound.play(main.sound_effects["double"])
         if len(cleared_lines) == 3:
-            pygame.mixer.Sound.play(game.sound_effects["triple"])
+            pygame.mixer.Sound.play(main.sound_effects["triple"])
         if len(cleared_lines) == 4:
-            pygame.mixer.Sound.play(game.sound_effects["tetris"])
+            pygame.mixer.Sound.play(main.sound_effects["tetris"])
 
-    game.level = int((game.line_count - (game.start_level * 10))/10)
-    print(game.line_count, game.start_level, game.level)
+    main.level = int((main.line_count - (main.start_level * 10))/10)
+    print(main.line_count, main.start_level, main.level)
 
 def create_grid(locked_pos={}):
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
@@ -78,22 +82,22 @@ def create_grid(locked_pos={}):
                 grid[i][j] = c
     return grid
 
-def draw_grid(game):
-    pygame.draw.rect(game.gameDisplay, (0, 0, 0), (game.grid_pos[0], game.grid_pos[1], game.play_width, game.play_height))
+def draw_grid(main):
+    pygame.draw.rect(main.gameDisplay, (0, 0, 0), (main.grid_pos[0], main.grid_pos[1], main.play_width, main.play_height))
 
-    for i in range(len(game.grid)):
-        for j in range(len(game.grid[i])):
-            dx, dy = j*game.block_size[0], i*game.block_size[1]
-            game.block_surface = init_surface(game.block_surface, game.block_surface_rect, game.grid[i][j], (150, 150, 150))
-            game.gameDisplay.blit(game.block_surface, (game.grid_pos[0] + dx, game.grid_pos[1] + dy))
+    for i in range(len(main.grid)):
+        for j in range(len(main.grid[i])):
+            dx, dy = j*main.block_size[0], i*main.block_size[1]
+            main.block_surface = init_surface(main.block_surface, main.block_surface_rect, main.grid[i][j], (150, 150, 150))
+            main.gameDisplay.blit(main.block_surface, (main.grid_pos[0] + dx, main.grid_pos[1] + dy))
 
-def get_shape(game):
-    return random.choice(list(game.shape_dict))
+def get_shape(main):
+    return random.choice(list(main.shape_dict))
 
 class Tetromino(pygame.sprite.Sprite):
-    def __init__(self, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
+    def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite_2(self, game, dict, group, data, item, parent, variable, action)
+        init_sprite_2(self, main, dict, group, data, item, parent, variable, action)
         self.surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
         self.init()
 
@@ -110,7 +114,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.hard_drop_check = True
         self.drop_check = True
 
-        self.shapes = self.game.shape_dict[self.item]
+        self.shapes = self.main.shape_dict[self.item]
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
         self.block_rot = -1
         self.block_center = 0
@@ -122,9 +126,9 @@ class Tetromino(pygame.sprite.Sprite):
     def draw(self):
         for block in self.block_pos:
             rect = self.rect.copy()
-            rect.x = self.game.grid_pos[0] + block[0]*self.game.block_size[0]
-            rect.y = self.game.grid_pos[1] + block[1]*self.game.block_size[1]
-            self.game.gameDisplay.blit(self.surface, rect)
+            rect.x = self.main.grid_pos[0] + block[0]*self.main.block_size[0]
+            rect.y = self.main.grid_pos[1] + block[1]*self.main.block_size[1]
+            self.main.gameDisplay.blit(self.surface, rect)
 
     def get_keys(self):
         dx, dy, rot = 0, 0, 0
@@ -175,18 +179,18 @@ class Tetromino(pygame.sprite.Sprite):
                     block_center = len(block_pos) - 1
 
         for block in block_pos:
-            if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
+            if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.main.grid[block[1]][block[0]] != (0, 0, 0):
                 move_check, lock_check, rot_check = not(dx != 0), not(dy != 0), not(rot != 0)
 
         if not lock_check and (not move_check or not rot_check):
             self.update_move(dy=dy)
         elif not lock_check:
-            pygame.mixer.Sound.play(self.game.sound_effects["lock"])
+            pygame.mixer.Sound.play(self.main.sound_effects["lock"])
             self.drop_check = False
             for block in self.block_pos:
-                self.game.grid[block[1]][block[0]] = self.color
-            clear_line(self.game)
-            new_piece(self.game, self.move_tap, self.last_dir, self.hard_drop_check)
+                self.main.grid[block[1]][block[0]] = self.color
+            clear_line(self.main)
+            new_piece(self.main, self.move_tap, self.last_dir, self.hard_drop_check)
         elif move_check and rot_check:
             if dx != 0 and dy != 0:
                 self.update_move(dy=dy)
@@ -194,13 +198,13 @@ class Tetromino(pygame.sprite.Sprite):
             else:
                 if dx != 0:
                     if not self.move_tap or self.last_dir != dx:
-                        pygame.mixer.Sound.play(self.game.sound_effects["move_tap"])
+                        pygame.mixer.Sound.play(self.main.sound_effects["move_tap"])
                         self.block_pos = block_pos
                         self.last_das = self.init_das_delay
                         self.last_dir = dx
                         self.move_tap = True
                     elif self.last_das <= 0:
-                        pygame.mixer.Sound.play(self.game.sound_effects["move_das"])
+                        pygame.mixer.Sound.play(self.main.sound_effects["move_das"])
                         self.block_pos = block_pos
                         self.last_das = self.das_delay
                 if dy != 0:
@@ -209,7 +213,7 @@ class Tetromino(pygame.sprite.Sprite):
                         self.last_drop = self.drop_delay
                         self.last_fall = self.fall_delay
             if rot != 0:
-                pygame.mixer.Sound.play(self.game.sound_effects["rotate"])
+                pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
                 self.block_pos = block_pos
                 self.block_center = block_center
                 self.block_rot = block_rot
@@ -220,27 +224,27 @@ class Tetromino(pygame.sprite.Sprite):
 
 
 
-def init_menu(game, menu, clear=True):
-    menu_dict = game.main_dict["menu"][menu]
+def init_menu(main, menu, clear=True):
+    menu_dict = main.main_dict["menu"][menu]
     if clear:
-        clear_menu(game)
+        clear_menu(main)
 
-    game.update_music(game.music_dict[menu_dict["music"]])
-    game.update_background(game.background_dict[menu_dict["background"]])
+    main.update_music(main.music_dict[menu_dict["music"]])
+    main.update_background(main.background_dict[menu_dict["background"]])
 
-    for button in game.button_dict[menu]:
-        Button(game, game.button_dict, game.buttons, data=menu, item=button)
+    for button in main.button_dict[menu]:
+        Button(main, main.button_dict, main.buttons, data=menu, item=button)
 
-def clear_menu(game):
-    for sprite in game.all_sprites:
+def clear_menu(main):
+    for sprite in main.all_sprites:
         sprite.kill()
 
-def main_menu(game, menu):
-    init_menu(game, menu)
-    new_game(game)
+def main_menu(main, menu):
+    init_menu(main, menu)
+    new_game(main)
 
-def pause_menu(game, menu):
-    game.paused = not game.paused
+def pause_menu(main, menu):
+    main.paused = not main.paused
 
 MAIN_DICT = {
     "game": {

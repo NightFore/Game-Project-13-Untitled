@@ -54,10 +54,10 @@ def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=Non
         sprite.move_speed = vec(sprite.settings["move_speed"])
         sprite.hit_rect = sprite.rect
 
-def init_sprite_2(sprite, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None, move=False):
+def init_sprite_2(sprite, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None, move=False):
     # Initialization -------------- #
-    sprite.game = game
-    sprite.groups = sprite.game.all_sprites, group
+    sprite.main = main
+    sprite.groups = sprite.main.all_sprites, group
     sprite.data = data
     sprite.item = item
     sprite.parent = parent
@@ -82,7 +82,7 @@ def init_sprite_2(sprite, game, dict, group=None, data=None, item=None, parent=N
     sprite.center = sprite.settings["align"]
     sprite.surface = pygame.Surface(sprite.size)
     sprite.color = sprite.object["color"]
-    sprite.rect = sprite.game.align_rect(sprite.surface, int(sprite.pos[0]), int(sprite.pos[1]), sprite.center)
+    sprite.rect = sprite.main.align_rect(sprite.surface, int(sprite.pos[0]), int(sprite.pos[1]), sprite.center)
 
     # Border
     if "border_size" in sprite.settings:

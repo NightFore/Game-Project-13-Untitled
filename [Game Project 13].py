@@ -16,7 +16,7 @@ vec = pygame.math.Vector2
 """
     Game
 """
-class Game:
+class Main:
     def __init__(self):
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.mixer.init()
@@ -197,6 +197,8 @@ class Game:
             self.gameDisplay.blit(self.dim_screen, (0, 0))
             self.draw_text("Paused", self.font, RED, (WIDTH / 2, HEIGHT / 2), align="center")
 
+        self.draw_text("Lines: %i" % self.line_count, self.font_dict["LiberationSerif"], WHITE, (75 + 55, 660),
+                       align="center")
         # Update ---------------------- #
         self.gameDisplay.update(self.event)
 
@@ -245,6 +247,6 @@ class Game:
         font_size = self.font_dict[font]["size"]
         self.font_dict[font] = pygame.font.Font(path.join(self.font_folder, font_ttf), font_size)
 
-g = Game()
+m = Main()
 while True:
-    g.run()
+    m.run()
