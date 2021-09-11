@@ -12,54 +12,52 @@ from Settings import *
 
 class Game:
     def __init__(self, main):
-        pass
+        self.main = main
+        self.main.tetrominoes = pygame.sprite.Group()
+        self.game_dict = self.main.main_dict["game"]
+        self.settings_dict = self.game_dict["settings"]
+        self.shape_dict = self.game_dict["shape"]
+        self.play_width = self.settings_dict["play_width"]
+        self.play_height = self.settings_dict["play_height"]
+        self.block_size = self.settings_dict["block_size"]
+        self.block_border_size = self.settings_dict["block_border_size"]
+        self.block_surface = pygame.Surface(self.block_size)
+        self.block_surface_rect = (self.block_border_size[0], self.block_border_size[1], self.block_size[0] - 2*self.block_border_size[0], self.block_size[1] - 2*self.block_border_size[1])
 
-
-def init_main(main):
-    main.tetrominoes = pygame.sprite.Group()
-    main.shape_dict = main.main_dict["shape"]
-    main.play_width = main.game_dict["play_width"]
-    main.play_height = main.game_dict["play_height"]
-    main.block_size = main.game_dict["block_size"]
-    main.block_border_size = main.game_dict["block_border_size"]
-    main.block_surface = pygame.Surface(main.block_size)
-    main.block_surface_rect = (main.block_border_size[0], main.block_border_size[1], main.block_size[0] - 2*main.block_border_size[0], main.block_size[1] - 2*main.block_border_size[1])
-    new_game(main)
-
-def new_game(main):
-    main.line_count = 0
-    main.start_level = 0
-    main.level = 0
-    main.grid = create_grid()
-    main.grid_pos = ((screen_size[0]-main.play_width)/2, screen_size[1]-main.play_height)
-    new_piece(main)
+    def new_game(self):
+        self.line_count = 0
+        self.start_level = 0
+        self.level = 0
+        self.grid = create_grid()
+        self.grid_pos = ((screen_size[0]-self.play_width)/2, screen_size[1]-self.play_height)
+        new_piece(self.main)
 
 def new_piece(main, move_tap=False, last_dir=0, hard_drop_check=True):
     for tetromino in main.tetrominoes:
         tetromino.kill()
-    Player = Tetromino(main, main.main_dict, main.tetrominoes, data="tetromino", item=get_shape(main))
+    Player = Tetromino(main, main.main_dict["game"], main.tetrominoes, data="tetromino", item=get_shape(main))
     Player.move_tap = move_tap
     Player.last_dir = last_dir
     Player.hard_drop_check = hard_drop_check
 
 def clear_line(main):
     cleared_lines = []
-    for i in range(len(main.grid)):
+    for i in range(len(main.game.grid)):
         clear = True
-        for j in range(len(main.grid[i])):
-            if main.grid[i][j] == (0, 0, 0):
+        for j in range(len(main.game.grid[i])):
+            if main.game.grid[i][j] == (0, 0, 0):
                 clear = False
         if clear:
             cleared_lines.append(i)
 
     if cleared_lines:
-        main.line_count += len(cleared_lines)
+        main.game.line_count += len(cleared_lines)
         for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
-            for j in range(len(main.grid[i])):
-                main.grid[i][j] = main.grid[i-len(cleared_lines)][j]
+            for j in range(len(main.game.grid[i])):
+                main.game.grid[i][j] = main.game.grid[i-len(cleared_lines)][j]
         for i in range(len(cleared_lines)):
-            for j in range(len(main.grid[0])):
-                main.grid[i][j] = (0, 0, 0)
+            for j in range(len(main.game.grid[0])):
+                main.game.grid[i][j] = (0, 0, 0)
         if len(cleared_lines) == 1:
             pygame.mixer.Sound.play(main.sound_effects["single"])
         if len(cleared_lines) == 2:
@@ -69,8 +67,8 @@ def clear_line(main):
         if len(cleared_lines) == 4:
             pygame.mixer.Sound.play(main.sound_effects["tetris"])
 
-    main.level = int((main.line_count - (main.start_level * 10))/10)
-    print(main.line_count, main.start_level, main.level)
+    main.game.level = int((main.game.line_count - (main.game.start_level * 10))/10)
+    print(main.game.line_count, main.game.start_level, main.game.level)
 
 def create_grid(locked_pos={}):
     grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
@@ -83,16 +81,16 @@ def create_grid(locked_pos={}):
     return grid
 
 def draw_grid(main):
-    pygame.draw.rect(main.gameDisplay, (0, 0, 0), (main.grid_pos[0], main.grid_pos[1], main.play_width, main.play_height))
+    pygame.draw.rect(main.gameDisplay, (0, 0, 0), (main.game.grid_pos[0], main.game.grid_pos[1], main.game.play_width, main.game.play_height))
 
-    for i in range(len(main.grid)):
-        for j in range(len(main.grid[i])):
-            dx, dy = j*main.block_size[0], i*main.block_size[1]
-            main.block_surface = init_surface(main.block_surface, main.block_surface_rect, main.grid[i][j], (150, 150, 150))
-            main.gameDisplay.blit(main.block_surface, (main.grid_pos[0] + dx, main.grid_pos[1] + dy))
+    for i in range(len(main.game.grid)):
+        for j in range(len(main.game.grid[i])):
+            dx, dy = j*main.game.block_size[0], i*main.game.block_size[1]
+            main.game.block_surface = init_surface(main.game.block_surface, main.game.block_surface_rect, main.game.grid[i][j], (150, 150, 150))
+            main.gameDisplay.blit(main.game.block_surface, (main.game.grid_pos[0] + dx, main.game.grid_pos[1] + dy))
 
 def get_shape(main):
-    return random.choice(list(main.shape_dict))
+    return random.choice(list(main.game.shape_dict))
 
 class Tetromino(pygame.sprite.Sprite):
     def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
@@ -114,7 +112,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.hard_drop_check = True
         self.drop_check = True
 
-        self.shapes = self.main.shape_dict[self.item]
+        self.shapes = self.main.game.shape_dict[self.item]
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
         self.block_rot = -1
         self.block_center = 0
@@ -126,8 +124,8 @@ class Tetromino(pygame.sprite.Sprite):
     def draw(self):
         for block in self.block_pos:
             rect = self.rect.copy()
-            rect.x = self.main.grid_pos[0] + block[0]*self.main.block_size[0]
-            rect.y = self.main.grid_pos[1] + block[1]*self.main.block_size[1]
+            rect.x = self.main.game.grid_pos[0] + block[0]*self.main.game.block_size[0]
+            rect.y = self.main.game.grid_pos[1] + block[1]*self.main.game.block_size[1]
             self.main.gameDisplay.blit(self.surface, rect)
 
     def get_keys(self):
@@ -179,7 +177,7 @@ class Tetromino(pygame.sprite.Sprite):
                     block_center = len(block_pos) - 1
 
         for block in block_pos:
-            if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.main.grid[block[1]][block[0]] != (0, 0, 0):
+            if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.main.game.grid[block[1]][block[0]] != (0, 0, 0):
                 move_check, lock_check, rot_check = not(dx != 0), not(dy != 0), not(rot != 0)
 
         if not lock_check and (not move_check or not rot_check):
@@ -188,7 +186,7 @@ class Tetromino(pygame.sprite.Sprite):
             pygame.mixer.Sound.play(self.main.sound_effects["lock"])
             self.drop_check = False
             for block in self.block_pos:
-                self.main.grid[block[1]][block[0]] = self.color
+                self.main.game.grid[block[1]][block[0]] = self.color
             clear_line(self.main)
             new_piece(self.main, self.move_tap, self.last_dir, self.hard_drop_check)
         elif move_check and rot_check:
@@ -241,15 +239,12 @@ def clear_menu(main):
 
 def main_menu(main, menu):
     init_menu(main, menu)
-    new_game(main)
+    main.game.new_game()
 
 def pause_menu(main, menu):
     main.paused = not main.paused
 
 MAIN_DICT = {
-    "game": {
-        "play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2)
-    },
     "background": {
         "default": {
             "color": DARK_SKY_BLUE,
@@ -297,23 +292,25 @@ MAIN_DICT = {
                 "sound_active": None, "sound_action": None},
         },
         "main_menu": {
-            "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "variable": "sprite.game", "action": new_game},
+            "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "variable": "sprite.game"},
             "load_game": {"type": "type_1", "pos": (20, 90), "text": "WIP"},
             "options": {"type": "type_1", "pos": (20, 160), "text": "WIP"},
             "exit": {"type": "type_1", "pos": (20, 230), "text": "Exit", "action": "sprite.game.quit_game"},
         },
     },
-    "tetromino": {
-        "settings": {"pos": (4, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},
-        "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
-        "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
-        "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
-        "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
-        "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
-        "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
-        "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
-    },
-    "shape": {
+    "game": {
+        "settings": {"play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2)},
+        "tetromino": {
+            "settings": {"pos": (4, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},
+            "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
+            "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
+            "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
+            "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
+            "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
+            "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
+        },
+        "shape": {
         "S": [['.....',
                '..00..',
                '.0X...',
@@ -409,5 +406,6 @@ MAIN_DICT = {
                '.0X..',
                '..0..',
                '.....']]
+    },
     },
 }

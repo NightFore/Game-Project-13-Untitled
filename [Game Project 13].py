@@ -112,7 +112,7 @@ class Main:
         self.entities = pygame.sprite.Group()
         self.walls = pygame.sprite.Group()
 
-    def init_game(self):
+    def init_main(self):
         self.debug_color = CYAN
         self.debug_mode = True
         self.paused = False
@@ -125,8 +125,8 @@ class Main:
 
     # Game Loop ----------------------- #
     def run(self):
-        init_main(self)
-        self.init_game()
+        self.game = Game(self)
+        self.init_main()
         self.playing = True
         while self.playing:
             self.dt = self.gameDisplay.clock.tick(FPS) / 1000
@@ -197,8 +197,6 @@ class Main:
             self.gameDisplay.blit(self.dim_screen, (0, 0))
             self.draw_text("Paused", self.font, RED, (WIDTH / 2, HEIGHT / 2), align="center")
 
-        self.draw_text("Lines: %i" % self.line_count, self.font_dict["LiberationSerif"], WHITE, (75 + 55, 660),
-                       align="center")
         # Update ---------------------- #
         self.gameDisplay.update(self.event)
 
