@@ -57,6 +57,7 @@ def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=Non
 def init_sprite_2(sprite, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None, move=False):
     # Initialization -------------- #
     sprite.main = main
+    sprite.game = sprite.main.game
     sprite.groups = sprite.main.all_sprites, group
     sprite.data = data
     sprite.item = item

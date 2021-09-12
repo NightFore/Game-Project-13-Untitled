@@ -10,6 +10,7 @@ from Class import *
 from Function import *
 from Settings import *
 
+
 class Game:
     def __init__(self, main):
         self.main = main
@@ -22,14 +23,14 @@ class Game:
         self.block_size = self.settings_dict["block_size"]
         self.block_border_size = self.settings_dict["block_border_size"]
         self.block_surface = pygame.Surface(self.block_size)
-        self.block_surface_rect = (self.block_border_size[0], self.block_border_size[1], self.block_size[0] - 2*self.block_border_size[0], self.block_size[1] - 2*self.block_border_size[1])
+        self.block_surface_rect = (self.block_border_size[0], self.block_border_size[1], self.block_size[0] - 2 * self.block_border_size[0], self.block_size[1] - 2 * self.block_border_size[1])
 
     def new_game(self):
         self.line_count = 0
         self.start_level = 0
         self.level = 0
         self.grid = create_grid()
-        self.grid_pos = ((screen_size[0]-self.play_width)/2, screen_size[1]-self.play_height)
+        self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
         self.new_piece()
 
     def new_piece(self, move_tap=False, last_dir=0, hard_drop_check=True):
@@ -55,9 +56,10 @@ class Game:
 
         if cleared_lines:
             self.line_count += len(cleared_lines)
-            for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
+            self.level = min(len(self.game_dict["level"]) - 1, int(self.line_count / 10))
+            for i in range(max(cleared_lines), len(cleared_lines) - 1, -1):
                 for j in range(len(self.grid[i])):
-                    self.grid[i][j] = self.grid[i-len(cleared_lines)][j]
+                    self.grid[i][j] = self.grid[i - len(cleared_lines)][j]
             for i in range(len(cleared_lines)):
                 for j in range(len(self.grid[0])):
                     self.grid[i][j] = (0, 0, 0)
@@ -70,20 +72,20 @@ class Game:
             if len(cleared_lines) == 4:
                 pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
 
-        self.level = int((self.line_count - (self.start_level * 10))/10)
-        print(self.line_count, self.start_level, self.level)
 
     def draw_grid(self):
         pygame.draw.rect(self.main.gameDisplay, (0, 0, 0), (self.grid_pos[0], self.grid_pos[1], self.play_width, self.play_height))
 
         for i in range(len(self.grid)):
             for j in range(len(self.grid[i])):
-                dx, dy = j*self.block_size[0], i*self.block_size[1]
+                dx, dy = j * self.block_size[0], i * self.block_size[1]
                 self.block_surface = init_surface(self.block_surface, self.block_surface_rect, self.grid[i][j], (150, 150, 150))
                 self.main.gameDisplay.blit(self.block_surface, (self.grid_pos[0] + dx, self.grid_pos[1] + dy))
 
     def draw(self):
         self.draw_grid()
+        self.main.draw_text("Lines: %i" % self.line_count, self.main.font_dict["LiberationSerif"], WHITE, (160, 590), align="center")
+        self.main.draw_text("Level: %i" % self.level, self.main.font_dict["LiberationSerif"], WHITE, (160, 660), align="center")
 
     def update(self):
         pass
@@ -93,7 +95,6 @@ class Tetromino(pygame.sprite.Sprite):
         # Initialization -------------- #
         init_sprite_2(self, main, dict, group, data, item, parent, variable, action)
         self.surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
-        self.game = self.main.game
         self.init()
 
     def init(self):
@@ -104,7 +105,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.last_das = self.das_delay
         self.drop_delay = 2
         self.last_drop = self.drop_delay
-        self.fall_delay = 48
+        self.fall_delay = self.game.game_dict["level"][self.game.level]
         self.last_fall = self.fall_delay
         self.hard_drop_check = True
         self.drop_check = True
@@ -116,13 +117,12 @@ class Tetromino(pygame.sprite.Sprite):
         self.rot_check = True
         self.offset = -2, -2
         self.update_move(rot=1)
-        print("Shape: %s" % self.item)
 
     def draw(self):
         for block in self.block_pos:
             rect = self.rect.copy()
-            rect.x = self.game.grid_pos[0] + block[0]*self.game.block_size[0]
-            rect.y = self.game.grid_pos[1] + block[1]*self.game.block_size[1]
+            rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
+            rect.y = self.game.grid_pos[1] + block[1] * self.game.block_size[1]
             self.main.gameDisplay.blit(self.surface, rect)
 
     def get_keys(self):
@@ -174,8 +174,8 @@ class Tetromino(pygame.sprite.Sprite):
                     block_center = len(block_pos) - 1
 
         for block in block_pos:
-            if not(0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                move_check, lock_check, rot_check = not(dx != 0), not(dy != 0), not(rot != 0)
+            if not (0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
+                move_check, lock_check, rot_check = not (dx != 0), not (dy != 0), not (rot != 0)
 
         if not lock_check and (not move_check or not rot_check):
             self.update_move(dy=dy)
@@ -308,101 +308,102 @@ MAIN_DICT = {
             "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "shape": {
-        "S": [['.....',
-               '..00..',
-               '.0X...',
-               '......',
-               '.....'],
-              ['.....',
-               '..0..',
-               '..X0.',
-               '...0.',
-               '.....']],
-        "Z": [['.....',
-               '.00..',
-               '..X0.',
-               '.....',
-               '.....'],
-              ['.....',
-               '..0..',
-               '.0X..',
-               '.0...',
-               '.....']],
-        "I": [['.....',
-               '.....',
-               '00X0.',
-               '.....',
-               '.....'],
-              ['..0..',
-               '..0..',
-               '..X..',
-               '..0..',
-               '.....']],
-        "O": [['.....',
-               '..00.',
-               '..X0.',
-               '.....',
-               '.....']],
-        "J": [['.....',
-               '.0...',
-               '.0X0.',
-               '.....',
-               '.....'],
-              ['.....',
-               '..00.',
-               '..X..',
-               '..0..',
-               '.....'],
-              ['.....',
-               '.....',
-               '.0X0.',
-               '...0.',
-               '.....'],
-              ['.....',
-               '..0..',
-               '..X..',
-               '.00..',
-               '.....']],
-        "L": [['.....',
-               '...0.',
-               '.0X0.',
-               '.....',
-               '.....'],
-              ['.....',
-               '..0..',
-               '..X..',
-               '..00.',
-               '.....'],
-              ['.....',
-               '.....',
-               '.0X0.',
-               '.0...',
-               '.....'],
-              ['.....',
-               '.00..',
-               '..X..',
-               '..0..',
-               '.....']],
-        "T": [['.....',
-               '..0..',
-               '.0X0.',
-               '.....',
-               '.....'],
-              ['.....',
-               '..0..',
-               '..X0.',
-               '..0..',
-               '.....'],
-              ['.....',
-               '.....',
-               '.0X0.',
-               '..0..',
-               '.....'],
-              ['.....',
-               '..0..',
-               '.0X..',
-               '..0..',
-               '.....']]
-    },
+            "S": [['.....',
+                   '......',
+                   '..X0..',
+                   '.00...',
+                   '.....'],
+                  ['.....',
+                   '..0..',
+                   '..X0.',
+                   '...0.',
+                   '.....']],
+            "Z": [['.....',
+                   '.....',
+                   '.0X..',
+                   '..00.',
+                   '.....'],
+                  ['.....',
+                   '...0.',
+                   '..X0.',
+                   '..0..',
+                   '.....']],
+            "I": [['.....',
+                   '.....',
+                   '00X0.',
+                   '.....',
+                   '.....'],
+                  ['..0..',
+                   '..0..',
+                   '..X..',
+                   '..0..',
+                   '.....']],
+            "O": [['.....',
+                   '..00.',
+                   '..X0.',
+                   '.....',
+                   '.....']],
+            "J": [['.....',
+                   '.0...',
+                   '.0X0.',
+                   '.....',
+                   '.....'],
+                  ['.....',
+                   '..00.',
+                   '..X..',
+                   '..0..',
+                   '.....'],
+                  ['.....',
+                   '.....',
+                   '.0X0.',
+                   '...0.',
+                   '.....'],
+                  ['.....',
+                   '..0..',
+                   '..X..',
+                   '.00..',
+                   '.....']],
+            "L": [['.....',
+                   '...0.',
+                   '.0X0.',
+                   '.....',
+                   '.....'],
+                  ['.....',
+                   '..0..',
+                   '..X..',
+                   '..00.',
+                   '.....'],
+                  ['.....',
+                   '.....',
+                   '.0X0.',
+                   '.0...',
+                   '.....'],
+                  ['.....',
+                   '.00..',
+                   '..X..',
+                   '..0..',
+                   '.....']],
+            "T": [['.....',
+                   '..0..',
+                   '.0X0.',
+                   '.....',
+                   '.....'],
+                  ['.....',
+                   '..0..',
+                   '..X0.',
+                   '..0..',
+                   '.....'],
+                  ['.....',
+                   '.....',
+                   '.0X0.',
+                   '..0..',
+                   '.....'],
+                  ['.....',
+                   '..0..',
+                   '.0X..',
+                   '..0..',
+                   '.....']]
+        },
+        "level": [48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
     },
 }
