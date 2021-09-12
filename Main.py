@@ -28,7 +28,8 @@ class Game:
     def new_game(self):
         self.line_count = 0
         self.start_level = 0
-        self.level = 0
+        self.level = self.start_level
+        self.score = 0
         self.grid = create_grid()
         self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
         self.new_piece()
@@ -56,21 +57,31 @@ class Game:
 
         if cleared_lines:
             self.line_count += len(cleared_lines)
-            self.level = min(len(self.game_dict["level"]) - 1, int(self.line_count / 10))
+            if self.line_count >= min((self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10):
+                self.level = min(self.level + 1, len(self.game_dict["level"]))
+
+            if len(cleared_lines) == 1:
+                pygame.mixer.Sound.play(self.main.sound_effects["single"])
+                self.score += 40 * (self.level + 1)
+            if len(cleared_lines) == 2:
+                pygame.mixer.Sound.play(self.main.sound_effects["double"])
+                self.score += 100 * (self.level + 1)
+            if len(cleared_lines) == 3:
+                pygame.mixer.Sound.play(self.main.sound_effects["triple"])
+                self.score += 300 * (self.level + 1)
+            if len(cleared_lines) == 4:
+                pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
+                self.score += 1200 * (self.level + 1)
+
             for i in range(max(cleared_lines), len(cleared_lines) - 1, -1):
                 for j in range(len(self.grid[i])):
                     self.grid[i][j] = self.grid[i - len(cleared_lines)][j]
             for i in range(len(cleared_lines)):
                 for j in range(len(self.grid[0])):
                     self.grid[i][j] = (0, 0, 0)
-            if len(cleared_lines) == 1:
-                pygame.mixer.Sound.play(self.main.sound_effects["single"])
-            if len(cleared_lines) == 2:
-                pygame.mixer.Sound.play(self.main.sound_effects["double"])
-            if len(cleared_lines) == 3:
-                pygame.mixer.Sound.play(self.main.sound_effects["triple"])
-            if len(cleared_lines) == 4:
-                pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
+        print(self.line_count, (self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10)
+        print(self.level, self.score)
+        print()
 
 
     def draw_grid(self):
@@ -84,8 +95,9 @@ class Game:
 
     def draw(self):
         self.draw_grid()
-        self.main.draw_text("Lines: %i" % self.line_count, self.main.font_dict["LiberationSerif"], WHITE, (160, 590), align="center")
-        self.main.draw_text("Level: %i" % self.level, self.main.font_dict["LiberationSerif"], WHITE, (160, 660), align="center")
+        self.main.draw_text("Score: %d" % self.score, self.main.font_dict["LiberationSerif"], WHITE, (160, 520), align="center")
+        self.main.draw_text("Lines: %d" % self.line_count, self.main.font_dict["LiberationSerif"], WHITE, (160, 590), align="center")
+        self.main.draw_text("Level: %d" % self.level, self.main.font_dict["LiberationSerif"], WHITE, (160, 660), align="center")
 
     def update(self):
         pass
@@ -289,7 +301,7 @@ MAIN_DICT = {
                 "sound_active": None, "sound_action": None},
         },
         "main_menu": {
-            "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "variable": "sprite.game"},
+            "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "action": "sprite.game.game.new_game"},
             "load_game": {"type": "type_1", "pos": (20, 90), "text": "WIP"},
             "options": {"type": "type_1", "pos": (20, 160), "text": "WIP"},
             "exit": {"type": "type_1", "pos": (20, 230), "text": "Exit", "action": "sprite.game.quit_game"},
