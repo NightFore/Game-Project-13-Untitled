@@ -80,7 +80,7 @@ class Game:
                 for j in range(len(self.grid[0])):
                     self.grid[i][j] = (0, 0, 0)
         print(self.line_count, (self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10)
-        print(self.level, self.score)
+        print(self.level, self.score, self.Player.fall_delay)
         print()
 
 
