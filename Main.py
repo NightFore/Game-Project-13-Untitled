@@ -32,14 +32,14 @@ class Game:
         self.score = 0
         self.grid = create_grid()
         self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
-        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.get_shape())
+        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
         self.new_piece()
 
     def new_piece(self, move_tap=False, last_dir=0, hard_drop_check=True):
         for tetromino in self.tetrominoes:
             tetromino.kill()
         self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
-        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.get_shape())
+        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
         self.Player.move_tap = move_tap
         self.Player.last_dir = last_dir
         self.Player.hard_drop_check = hard_drop_check
@@ -240,8 +240,8 @@ class Next_Piece(pygame.sprite.Sprite):
 
     def init(self):
         self.shape = self.game.shape_dict[self.item][0]
-        x_min, x_max = len(self.shape[0]), 0
-        y_min, y_max = len(self.shape), 0
+        x_max, x_min = 0, len(self.shape[0])
+        y_max, y_min = 0, len(self.shape)
 
         self.block_pos = []
         for y, line in enumerate(self.shape):
@@ -253,17 +253,17 @@ class Next_Piece(pygame.sprite.Sprite):
         width = (abs(x_min - x_max) + 1) * self.game.block_size[0]
         height = (abs(y_min - y_max) + 1) * self.game.block_size[1]
 
-        self.block_surface = pygame.Surface((width, height))
-        self.block_rect = self.main.align_rect(self.block_surface, 1000, 350, "center")
+        block_surface = self.surface
+        self.surface = pygame.Surface((width, height))
+        self.rect = self.main.align_rect(self.surface, int(self.pos[0]), int(self.pos[1]), self.center)
         for block in self.block_pos:
             rect = self.rect.copy()
             rect.x = (block[0]-x_min) * self.game.block_size[0]
             rect.y = (block[1]-y_min) * self.game.block_size[1]
-            print(block[0] - x_min, block[0], x_min)
-            self.block_surface.blit(self.surface, rect)
+            self.surface.blit(block_surface, rect)
 
     def draw(self):
-        self.main.gameDisplay.blit(self.block_surface, self.block_rect)
+        self.main.gameDisplay.blit(self.surface, self.rect)
 
     def update(self):
         pass
@@ -349,6 +349,16 @@ MAIN_DICT = {
         "settings": {"play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2)},
         "tetromino": {
             "settings": {"pos": (4, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},
+            "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
+            "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
+            "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
+            "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
+            "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
+            "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
+        },
+        "next_piece": {
+            "settings": {"pos": (1000, 350), "align": "center", "size": (30, 30), "border_size": (6, 6)},
             "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
             "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
             "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
