@@ -32,12 +32,14 @@ class Game:
         self.score = 0
         self.grid = create_grid()
         self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
+        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.get_shape())
         self.new_piece()
 
     def new_piece(self, move_tap=False, last_dir=0, hard_drop_check=True):
         for tetromino in self.tetrominoes:
             tetromino.kill()
-        self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.get_shape())
+        self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
+        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.get_shape())
         self.Player.move_tap = move_tap
         self.Player.last_dir = last_dir
         self.Player.hard_drop_check = hard_drop_check
@@ -229,6 +231,42 @@ class Tetromino(pygame.sprite.Sprite):
     def update(self):
         self.get_keys()
 
+class Next_Piece(pygame.sprite.Sprite):
+    def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
+        # Initialization -------------- #
+        init_sprite_2(self, main, dict, group, data, item, parent, variable, action)
+        self.surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
+        self.init()
+
+    def init(self):
+        self.shape = self.game.shape_dict[self.item][0]
+        x_min, x_max = len(self.shape[0]), 0
+        y_min, y_max = len(self.shape), 0
+
+        self.block_pos = []
+        for y, line in enumerate(self.shape):
+            for x, column in enumerate(line):
+                if column == "0" or column == "X":
+                    self.block_pos.append([x, y])
+                    x_min, x_max = min(x_min, x), max(x_max, x)
+                    y_min, y_max = min(y_min, y), max(y_max, y)
+        width = (abs(x_min - x_max) + 1) * self.game.block_size[0]
+        height = (abs(y_min - y_max) + 1) * self.game.block_size[1]
+
+        self.block_surface = pygame.Surface((width, height))
+        self.block_rect = self.main.align_rect(self.block_surface, 1000, 350, "center")
+        for block in self.block_pos:
+            rect = self.rect.copy()
+            rect.x = (block[0]-x_min) * self.game.block_size[0]
+            rect.y = (block[1]-y_min) * self.game.block_size[1]
+            print(block[0] - x_min, block[0], x_min)
+            self.block_surface.blit(self.surface, rect)
+
+    def draw(self):
+        self.main.gameDisplay.blit(self.block_surface, self.block_rect)
+
+    def update(self):
+        pass
 
 
 def init_menu(main, menu, clear=True):
