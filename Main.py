@@ -132,13 +132,6 @@ class Tetromino(pygame.sprite.Sprite):
         self.offset = -2, -2
         self.update_move(rot=1)
 
-    def draw(self):
-        for block in self.block_pos:
-            rect = self.rect.copy()
-            rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
-            rect.y = self.game.grid_pos[1] + block[1] * self.game.block_size[1]
-            self.main.gameDisplay.blit(self.surface, rect)
-
     def get_keys(self):
         dx, dy, rot = 0, 0, 0
         keys = pygame.key.get_pressed()
@@ -228,6 +221,13 @@ class Tetromino(pygame.sprite.Sprite):
                 self.block_rot = block_rot
                 self.rot_check = False
 
+    def draw(self):
+        for block in self.block_pos:
+            rect = self.rect.copy()
+            rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
+            rect.y = self.game.grid_pos[1] + block[1] * self.game.block_size[1]
+            self.main.gameDisplay.blit(self.surface, rect)
+
     def update(self):
         self.get_keys()
 
@@ -240,8 +240,9 @@ class Next_Piece(pygame.sprite.Sprite):
 
     def init(self):
         self.shape = self.game.shape_dict[self.item][0]
-        x_max, x_min = 0, len(self.shape[0])
-        y_max, y_min = 0, len(self.shape)
+        len_x, len_y = len(self.shape[0]), len(self.shape)
+        x_min, x_max = len_x, 0
+        y_min, y_max = len_y, 0
 
         self.block_pos = []
         for y, line in enumerate(self.shape):
@@ -255,15 +256,23 @@ class Next_Piece(pygame.sprite.Sprite):
 
         block_surface = self.surface
         self.surface = pygame.Surface((width, height))
-        self.rect = self.main.align_rect(self.surface, int(self.pos[0]), int(self.pos[1]), self.center)
+        self.rect = self.main.align_rect(self.surface, int(self.pos[0]), int(self.pos[1] + self.game.block_size[1]/2), self.center)
         for block in self.block_pos:
             rect = self.rect.copy()
             rect.x = (block[0]-x_min) * self.game.block_size[0]
             rect.y = (block[1]-y_min) * self.game.block_size[1]
             self.surface.blit(block_surface, rect)
 
+        box_width, box_height = len_x * self.game.block_size[0], len_y * self.game.block_size[1]
+        self.box_surface = pygame.Surface((box_width, box_height))
+        self.box_rect = self.main.align_rect(self.box_surface, int(self.pos[0]), int(self.pos[1]), self.center)
+        self.box_surface_rect = (6, 6, box_width - 2*6, box_height - 2*6)
+        self.box_surface = init_surface(self.box_surface, self.box_surface_rect, (0, 0, 0), (150, 150, 150))
+
     def draw(self):
+        self.main.gameDisplay.blit(self.box_surface, self.box_rect)
         self.main.gameDisplay.blit(self.surface, self.rect)
+        self.main.draw_text("NEXT", self.main.font_dict["LiberationSerif"], WHITE, (self.pos[0], self.pos[1] - self.game.block_size[1]), align="s")
 
     def update(self):
         pass
@@ -358,7 +367,7 @@ MAIN_DICT = {
             "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "next_piece": {
-            "settings": {"pos": (1000, 350), "align": "center", "size": (30, 30), "border_size": (6, 6)},
+            "settings": {"pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6)},
             "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
             "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
             "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
