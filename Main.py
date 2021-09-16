@@ -27,7 +27,7 @@ class Game:
 
     def new_game(self):
         self.line_count = 0
-        self.start_level = 0
+        self.start_level = 9
         self.level = self.start_level
         self.score = 0
         self.grid = create_grid()
@@ -230,6 +230,7 @@ class Tetromino(pygame.sprite.Sprite):
 
     def update(self):
         self.get_keys()
+        print(self.last_fall, pygame.time.get_ticks())
 
 class Next_Piece(pygame.sprite.Sprite):
     def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
@@ -473,6 +474,6 @@ MAIN_DICT = {
                    '..0..',
                    '.....']]
         },
-        "level": [48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+        "level": [48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
     },
 }
