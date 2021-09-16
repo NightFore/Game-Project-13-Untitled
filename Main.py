@@ -111,24 +111,33 @@ class Tetromino(pygame.sprite.Sprite):
         self.init()
 
     def init(self):
-        self.move_tap = False
+        # Settings
+        self.settings = self.game.settings_dict
+        self.shapes = self.game.shape_dict[self.item]
+        self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
+        self.offset = -2, -2
+
+        # dx
         self.last_dir = 0
-        self.init_das_delay = 16
-        self.das_delay = 6
+        self.tap_delay = self.settings["tap_delay"]
+        self.das_delay = self.settings["das_delay"]
         self.last_das = self.das_delay
-        self.drop_delay = 2
+        self.tap_check = False
+
+        # dy
+        self.drop_delay = self.settings["drop_delay"]
         self.last_drop = self.drop_delay
         self.fall_delay = self.game.game_dict["level"][self.game.level]
         self.last_fall = self.fall_delay
         self.hard_drop_check = True
-        self.drop_check = True
+        self.lock_check = True
 
-        self.shapes = self.game.shape_dict[self.item]
-        self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
+        # rot
         self.block_rot = -1
         self.block_center = 0
         self.rot_check = True
-        self.offset = -2, -2
+
+        # Initializing shape
         self.update_move(rot=1)
 
     def get_keys(self):
@@ -148,7 +157,7 @@ class Tetromino(pygame.sprite.Sprite):
             if self.hard_drop_check:
                 self.hard_drop_check = False
                 for _ in range(20):
-                    if self.drop_check:
+                    if self.lock_check:
                         self.last_drop = 0
                         self.update_move(dy=1)
         else:
@@ -162,11 +171,11 @@ class Tetromino(pygame.sprite.Sprite):
             self.last_drop = 0
             dy = 1
         if dx == 0:
-            self.move_tap = False
+            self.tap_check = False
             self.last_dir = 0
+        self.update_move(rot=rot)
         self.update_move(dx=dx)
         self.update_move(dy=dy)
-        self.update_move(rot=rot)
 
     def update_move(self, dx=0, dy=0, rot=0):
         move_check, lock_check, rot_check = True, False, True
@@ -189,21 +198,21 @@ class Tetromino(pygame.sprite.Sprite):
             self.update_move(dy=dy)
         elif lock_check:
             pygame.mixer.Sound.play(self.main.sound_effects["lock"])
-            self.drop_check = False
+            self.lock_check = False
             for block in self.block_pos:
                 self.game.grid[block[1]][block[0]] = self.color
             self.game.clear_line()
-            self.game.new_piece(self.move_tap, self.last_dir, self.hard_drop_check)
+            self.game.new_piece(self.tap_check, self.last_dir, self.hard_drop_check)
         elif move_check and rot_check:
             if dx != 0:
-                if not self.move_tap or self.last_dir != dx:
-                    pygame.mixer.Sound.play(self.main.sound_effects["move_tap"])
+                if not self.tap_check or self.last_dir != dx:
+                    pygame.mixer.Sound.play(self.main.sound_effects["tap"])
                     self.block_pos = block_pos
-                    self.last_das = self.init_das_delay
+                    self.last_das = self.tap_delay
                     self.last_dir = dx
-                    self.move_tap = True
+                    self.tap_check = True
                 elif self.last_das <= 0:
-                    pygame.mixer.Sound.play(self.main.sound_effects["move_das"])
+                    pygame.mixer.Sound.play(self.main.sound_effects["das"])
                     self.block_pos = block_pos
                     self.last_das = self.das_delay
             if dy != 0 and self.last_drop <= 0:
@@ -307,8 +316,8 @@ MAIN_DICT = {
         "default": "Tetris_theme.ogg",
     },
     "sound": {
-        "move_tap": "se_maoudamashii_system_14.ogg",
-        "move_das": "se_maoudamashii_system_21.ogg",
+        "tap": "se_maoudamashii_system_14.ogg",
+        "das": "se_maoudamashii_system_21.ogg",
         "rotate": "se_maoudamashii_system_17.ogg",
         "collide": "se_maoudamashii_noise_16.ogg",
         "lock": "se_maoudamashii_system_14.ogg",  ### Change se_maoudamashii_fight_07
@@ -351,7 +360,9 @@ MAIN_DICT = {
         },
     },
     "game": {
-        "settings": {"play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2)},
+        "settings": {
+            "play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2),
+            "tap_delay": 16, "das_delay": 6, "drop_delay": 2},
         "tetromino": {
             "settings": {"pos": (4, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},
             "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
