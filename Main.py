@@ -83,7 +83,6 @@ class Game:
                     self.grid[i][j] = (0, 0, 0)
         print(self.line_count, (self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10)
         print(self.level, self.score, self.Player.fall_delay)
-        print()
 
 
     def draw_grid(self):
@@ -230,7 +229,6 @@ class Tetromino(pygame.sprite.Sprite):
 
     def update(self):
         self.get_keys()
-        print(self.last_fall, pygame.time.get_ticks())
 
 class Next_Piece(pygame.sprite.Sprite):
     def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
