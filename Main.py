@@ -81,9 +81,6 @@ class Game:
             for i in range(len(cleared_lines)):
                 for j in range(len(self.grid[0])):
                     self.grid[i][j] = (0, 0, 0)
-        print(self.line_count, (self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10)
-        print(self.level, self.score, self.Player.fall_delay)
-
 
     def draw_grid(self):
         pygame.draw.rect(self.main.gameDisplay, (0, 0, 0), (self.grid_pos[0], self.grid_pos[1], self.play_width, self.play_height))
@@ -120,7 +117,7 @@ class Tetromino(pygame.sprite.Sprite):
         # Ghost Piece
         self.ghost_pos = self.block_pos
         self.ghost_surface = pygame.Surface.copy(self.surface)
-        self.ghost_surface.set_alpha(125)
+        self.ghost_surface.set_alpha(150)
 
         # dx
         self.last_dir = 0
@@ -144,6 +141,7 @@ class Tetromino(pygame.sprite.Sprite):
 
         # Initializing shape
         self.update_move(rot=1)
+        self.update_move(ghost=True)
 
     def get_keys(self):
         dx, dy, rot = 0, 0, 0
@@ -182,8 +180,14 @@ class Tetromino(pygame.sprite.Sprite):
         self.update_move(dx=dx)
         self.update_move(dy=dy)
 
-    def update_move(self, dx=0, dy=0, rot=0, ghost=False):
+        self.ghost_pos = self.block_pos
+        for _ in range(20):
+            self.update_move(dy=1, pos=self.ghost_pos, ghost=True)
+
+    def update_move(self, dx=0, dy=0, rot=0, pos=None, ghost=False):
         move, move_check, lock_check, rot_check = False, True, False, True
+        if pos is None:
+            pos = self.block_pos
         block_pos = []
         block_rot = (self.block_rot + rot) % len(self.shapes)
         block_center = 0
@@ -191,7 +195,7 @@ class Tetromino(pygame.sprite.Sprite):
         for y, line in enumerate(shape):
             for x, column in enumerate(line):
                 if column == "0" or column == "X":
-                    block_pos.append([self.block_pos[self.block_center][0] + self.offset[0] + x + dx, self.block_pos[self.block_center][1] + self.offset[1] + y + dy])
+                    block_pos.append([pos[self.block_center][0] + self.offset[0] + x + dx, pos[self.block_center][1] + self.offset[1] + y + dy])
                 if column == "X":
                     block_center = len(block_pos) - 1
 
@@ -202,12 +206,13 @@ class Tetromino(pygame.sprite.Sprite):
         if lock_check and (not move_check or not rot_check):
             self.update_move(dy=dy)
         elif lock_check:
-            pygame.mixer.Sound.play(self.main.sound_effects["lock"])
-            self.lock_check = False
-            for block in self.block_pos:
-                self.game.grid[block[1]][block[0]] = self.color
-            self.game.clear_line()
-            self.game.new_piece(self.tap_check, self.last_dir, self.hard_drop_check)
+            if not ghost:
+                pygame.mixer.Sound.play(self.main.sound_effects["lock"])
+                self.lock_check = False
+                for block in pos:
+                    self.game.grid[block[1]][block[0]] = self.color
+                self.game.clear_line()
+                self.game.new_piece(self.tap_check, self.last_dir, self.hard_drop_check)
         elif move_check and rot_check:
             if dx != 0:
                 if not self.tap_check or self.last_dir != dx:
@@ -246,7 +251,7 @@ class Tetromino(pygame.sprite.Sprite):
         for block in self.ghost_pos:
             rect = self.rect.copy()
             rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
-            rect.y = self.game.grid_pos[1] + (block[1]+3) * self.game.block_size[1]
+            rect.y = self.game.grid_pos[1] + block[1] * self.game.block_size[1]
             self.main.gameDisplay.blit(self.ghost_surface, rect)
 
     def update(self):
