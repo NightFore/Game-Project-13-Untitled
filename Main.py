@@ -117,6 +117,11 @@ class Tetromino(pygame.sprite.Sprite):
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
         self.offset = -2, -2
 
+        # Ghost Piece
+        self.ghost_pos = self.block_pos
+        self.ghost_surface = pygame.Surface.copy(self.surface)
+        self.ghost_surface.set_alpha(125)
+
         # dx
         self.last_dir = 0
         self.tap_delay = self.settings["tap_delay"]
@@ -177,8 +182,8 @@ class Tetromino(pygame.sprite.Sprite):
         self.update_move(dx=dx)
         self.update_move(dy=dy)
 
-    def update_move(self, dx=0, dy=0, rot=0):
-        move_check, lock_check, rot_check = True, False, True
+    def update_move(self, dx=0, dy=0, rot=0, ghost=False):
+        move, move_check, lock_check, rot_check = False, True, False, True
         block_pos = []
         block_rot = (self.block_rot + rot) % len(self.shapes)
         block_center = 0
@@ -207,24 +212,29 @@ class Tetromino(pygame.sprite.Sprite):
             if dx != 0:
                 if not self.tap_check or self.last_dir != dx:
                     pygame.mixer.Sound.play(self.main.sound_effects["tap"])
-                    self.block_pos = block_pos
+                    move = True
                     self.last_das = self.tap_delay
                     self.last_dir = dx
                     self.tap_check = True
                 elif self.last_das <= 0:
                     pygame.mixer.Sound.play(self.main.sound_effects["das"])
-                    self.block_pos = block_pos
+                    move = True
                     self.last_das = self.das_delay
-            if dy != 0 and self.last_drop <= 0:
-                self.block_pos = block_pos
+            if dy != 0 and (self.last_drop <= 0 or ghost):
+                move = True
                 self.last_drop = self.drop_delay
                 self.last_fall = self.fall_delay
             if rot != 0:
                 pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
-                self.block_pos = block_pos
+                move = True
                 self.block_center = block_center
                 self.block_rot = block_rot
                 self.rot_check = False
+        if move:
+            if not ghost:
+                self.block_pos = block_pos
+            else:
+                self.ghost_pos = block_pos
 
     def draw(self):
         for block in self.block_pos:
@@ -232,6 +242,12 @@ class Tetromino(pygame.sprite.Sprite):
             rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
             rect.y = self.game.grid_pos[1] + block[1] * self.game.block_size[1]
             self.main.gameDisplay.blit(self.surface, rect)
+
+        for block in self.ghost_pos:
+            rect = self.rect.copy()
+            rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
+            rect.y = self.game.grid_pos[1] + (block[1]+3) * self.game.block_size[1]
+            self.main.gameDisplay.blit(self.ghost_surface, rect)
 
     def update(self):
         self.get_keys()
