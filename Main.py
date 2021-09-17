@@ -35,14 +35,12 @@ class Game:
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
         self.new_piece()
 
-    def new_piece(self, move_tap=False, last_dir=0, hard_drop_check=True):
+    def new_piece(self, dx=0, tap_check=False):
         for tetromino in self.tetrominoes:
             tetromino.kill()
         self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
-        self.Player.move_tap = move_tap
-        self.Player.last_dir = last_dir
-        self.Player.hard_drop_check = hard_drop_check
+        self.Player.dx = dx
 
     def get_shape(self):
         return random.choice(list(self.shape_dict))
@@ -120,19 +118,19 @@ class Tetromino(pygame.sprite.Sprite):
         self.ghost_surface.set_alpha(150)
 
         # dx
-        self.last_dir = 0
+        self.dx = 0
         self.tap_delay = self.settings["tap_delay"]
         self.das_delay = self.settings["das_delay"]
-        self.last_das = self.das_delay
-        self.tap_check = False
+        self.last_move = self.das_delay
+        self.tap_check = True
 
         # dy
         self.drop_delay = self.settings["drop_delay"]
-        self.last_drop = self.drop_delay
         self.fall_delay = self.game.game_dict["level"][self.game.level]
+        self.last_drop = self.drop_delay
         self.last_fall = self.fall_delay
-        self.hard_drop_check = True
-        self.lock_check = True
+        self.hard_drop_check = False
+        self.drop_check = True
 
         # rot
         self.block_rot = -1
@@ -141,105 +139,108 @@ class Tetromino(pygame.sprite.Sprite):
 
         # Initializing shape
         self.update_move(rot=1)
-        self.update_move(ghost=True)
 
     def get_keys(self):
+        # Initialization
         dx, dy, rot = 0, 0, 0
         keys = pygame.key.get_pressed()
+
+        # Move
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and (self.dx == 0 or self.dx == -1):
+            dx = -1
+        elif (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and (self.dx == 0 or self.dx == 1):
+            dx = 1
+        else:
+            self.dx = 0
+            self.tap_check = False
+
+        # Soft Drop
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            dy = 1
+
+        # Rotate
         if keys[pygame.K_UP] or keys[pygame.K_w]:
             rot = self.rot_check
         else:
             self.rot_check = True
-        if keys[pygame.K_DOWN] or keys[pygame.K_s] and dx == 0:
-            dy = 1
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and (self.last_dir == -1 or self.last_dir == 0):
-            dx = -1
-        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and (self.last_dir == 1 or self.last_dir == 0):
-            dx = 1
+
+        # Hard Drop
         if keys[pygame.K_SPACE]:
             if self.hard_drop_check:
                 self.hard_drop_check = False
-                for _ in range(20):
-                    if self.lock_check:
-                        self.last_drop = 0
-                        self.update_move(dy=1)
+                while self.drop_check:
+                    self.last_drop = 0
+                    self.update_move(dy=1)
         else:
             self.hard_drop_check = True
 
-        self.last_das -= 1
+        # Update Last
+        self.last_move -= 1
         self.last_drop -= 1
         self.last_fall -= 1
         if self.last_fall <= 0:
-            self.last_fall = self.fall_delay
-            self.last_drop = 0
             dy = 1
-        if dx == 0:
-            self.tap_check = False
-            self.last_dir = 0
+
+        # Update Move
         self.update_move(rot=rot)
         self.update_move(dx=dx)
         self.update_move(dy=dy)
 
-        self.ghost_pos = self.block_pos
-        for _ in range(20):
-            self.update_move(dy=1, pos=self.ghost_pos, ghost=True)
-
-    def update_move(self, dx=0, dy=0, rot=0, pos=None, ghost=False):
-        move, move_check, lock_check, rot_check = False, True, False, True
-        if pos is None:
-            pos = self.block_pos
+    def update_move(self, dx=0, dy=0, rot=0):
+        # Initialization
         block_pos = []
         block_rot = (self.block_rot + rot) % len(self.shapes)
         block_center = 0
-        shape = self.shapes[block_rot]
-        for y, line in enumerate(shape):
+        block_shape = self.shapes[block_rot]
+        for y, line in enumerate(block_shape):
             for x, column in enumerate(line):
                 if column == "0" or column == "X":
-                    block_pos.append([pos[self.block_center][0] + self.offset[0] + x + dx, pos[self.block_center][1] + self.offset[1] + y + dy])
+                    pos_x = self.block_pos[self.block_center][0] + self.offset[0] + x + dx
+                    pos_y = self.block_pos[self.block_center][1] + self.offset[1] + y + dy
+                    block_pos.append([pos_x, pos_y])
                 if column == "X":
                     block_center = len(block_pos) - 1
 
+        # Check
+        move_check, self.drop_check, rot_check = True, True, True
         for block in block_pos:
             if not (0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                move_check, lock_check, rot_check = not (dx != 0), dy != 0, not (rot != 0)
+                move_check, self.drop_check, rot_check = not (dx != 0), not (dy != 0), not (rot != 0)
 
-        if lock_check and (not move_check or not rot_check):
-            self.update_move(dy=dy)
-        elif lock_check:
-            if not ghost:
-                pygame.mixer.Sound.play(self.main.sound_effects["lock"])
-                self.lock_check = False
-                for block in pos:
-                    self.game.grid[block[1]][block[0]] = self.color
-                self.game.clear_line()
-                self.game.new_piece(self.tap_check, self.last_dir, self.hard_drop_check)
-        elif move_check and rot_check:
-            if dx != 0:
-                if not self.tap_check or self.last_dir != dx:
+        # Move
+        if move_check and self.drop_check and rot_check:
+            move = False
+            if dx != 0 and move_check:
+                if not self.tap_check or self.dx != dx:
                     pygame.mixer.Sound.play(self.main.sound_effects["tap"])
-                    move = True
-                    self.last_das = self.tap_delay
-                    self.last_dir = dx
                     self.tap_check = True
-                elif self.last_das <= 0:
-                    pygame.mixer.Sound.play(self.main.sound_effects["das"])
+                    self.last_move = self.tap_delay
+                    self.dx = dx
                     move = True
-                    self.last_das = self.das_delay
-            if dy != 0 and (self.last_drop <= 0 or ghost):
-                move = True
+                elif self.last_move <= 0:
+                    pygame.mixer.Sound.play(self.main.sound_effects["das"])
+                    self.last_move = self.das_delay
+                    move = True
+            if dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0):
                 self.last_drop = self.drop_delay
                 self.last_fall = self.fall_delay
+                move = True
             if rot != 0:
                 pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
-                move = True
-                self.block_center = block_center
-                self.block_rot = block_rot
                 self.rot_check = False
-        if move:
-            if not ghost:
+                self.block_rot = block_rot
+                self.block_center = block_center
+                move = True
+            if move:
                 self.block_pos = block_pos
-            else:
-                self.ghost_pos = block_pos
+
+        # Lock
+        if not self.drop_check:
+            pygame.mixer.Sound.play(self.main.sound_effects["lock"])
+            for block in self.block_pos:
+                self.game.grid[block[1]][block[0]] = self.color
+            self.game.clear_line()
+            self.game.new_piece(self.dx, self.tap_check)
 
     def draw(self):
         for block in self.block_pos:
