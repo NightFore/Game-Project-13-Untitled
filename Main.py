@@ -133,12 +133,14 @@ class Tetromino(pygame.sprite.Sprite):
         self.drop_check = True
 
         # rot
-        self.block_rot = -1
+        self.block_rot = 0
         self.block_center = 0
         self.rot_check = True
 
         # Initializing shape
-        self.update_move(rot=1)
+        self.init_shape = True
+        self.update_move()
+        self.init_shape = False
 
     def get_keys(self):
         # Initialization
@@ -182,9 +184,12 @@ class Tetromino(pygame.sprite.Sprite):
             dy = 1
 
         # Update Move
-        self.update_move(rot=rot)
-        self.update_move(dx=dx)
-        self.update_move(dy=dy)
+        if rot:
+            self.update_move(rot=rot)
+        if dx:
+            self.update_move(dx=dx)
+        if dy:
+            self.update_move(dy=dy)
 
     def update_move(self, dx=0, dy=0, rot=0):
         # Initialization
@@ -221,11 +226,11 @@ class Tetromino(pygame.sprite.Sprite):
                     pygame.mixer.Sound.play(self.main.sound_effects["das"])
                     self.last_move = self.das_delay
                     move = True
-            if dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0):
+            elif dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0):
                 self.last_drop = self.drop_delay
                 self.last_fall = self.fall_delay
                 move = True
-            if rot != 0:
+            elif rot != 0 or self.init_shape:
                 pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
                 self.rot_check = False
                 self.block_rot = block_rot
