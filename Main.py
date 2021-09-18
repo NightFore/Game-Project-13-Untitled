@@ -35,7 +35,7 @@ class Game:
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
         self.new_piece()
 
-    def new_piece(self, dx=0, tap_check=False):
+    def new_piece(self, dx=0):
         for tetromino in self.tetrominoes:
             tetromino.kill()
         self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
@@ -112,11 +112,6 @@ class Tetromino(pygame.sprite.Sprite):
         self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
         self.offset = -2, -2
 
-        # Ghost Piece
-        self.ghost_pos = self.block_pos
-        self.ghost_surface = pygame.Surface.copy(self.surface)
-        self.ghost_surface.set_alpha(150)
-
         # dx
         self.dx = 0
         self.tap_delay = self.settings["tap_delay"]
@@ -137,10 +132,16 @@ class Tetromino(pygame.sprite.Sprite):
         self.block_center = 0
         self.rot_check = True
 
-        # Initializing shape
+        # Initializing Piece
         self.init_shape = True
         self.update_move()
         self.init_shape = False
+
+        # Initializing Ghost Piece
+        self.ghost_pos = self.block_pos
+        self.ghost_check = True
+        self.ghost_surface = pygame.Surface.copy(self.surface)
+        self.ghost_surface.set_alpha(125)
 
     def get_keys(self):
         # Initialization
@@ -181,13 +182,20 @@ class Tetromino(pygame.sprite.Sprite):
         # Update Move
         if rot:
             self.update_move(rot=rot)
+            self.ghost_check = True
         if dx:
             self.update_move(dx=dx)
+            self.ghost_check = True
         if dy:
             self.update_move(dy=dy)
+        if self.ghost_check:
+            self.ghost_pos = self.block_pos
+            while self.ghost_check:
+                self.update_move(dy=1, ghost=True)
 
-    def update_move(self, dx=0, dy=0, rot=0):
+    def update_move(self, dx=0, dy=0, rot=0, ghost=False):
         # Initialization
+        pos = self.block_pos if not ghost else self.ghost_pos
         block_pos = []
         block_rot = (self.block_rot + rot) % len(self.shapes)
         block_center = 0
@@ -195,52 +203,59 @@ class Tetromino(pygame.sprite.Sprite):
         for y, line in enumerate(block_shape):
             for x, column in enumerate(line):
                 if column == "0" or column == "X":
-                    pos_x = self.block_pos[self.block_center][0] + self.offset[0] + x + dx
-                    pos_y = self.block_pos[self.block_center][1] + self.offset[1] + y + dy
+                    pos_x = pos[self.block_center][0] + self.offset[0] + x + dx
+                    pos_y = pos[self.block_center][1] + self.offset[1] + y + dy
                     block_pos.append([pos_x, pos_y])
                 if column == "X":
                     block_center = len(block_pos) - 1
 
         # Check
-        move_check, self.drop_check, rot_check = True, True, True
+        move_check, drop_check, rot_check = True, True, True
         for block in block_pos:
             if not (0 <= block[0] <= 9 and block[1] <= 19) or 0 <= block[1] and self.game.grid[block[1]][block[0]] != (0, 0, 0):
-                move_check, self.drop_check, rot_check = not (dx != 0), not (dy != 0), not (rot != 0)
+                move_check, drop_check, rot_check = not (dx != 0), not (dy != 0), not (rot != 0)
 
-        # Move
-        if move_check and self.drop_check and rot_check:
-            move = False
-            if dx != 0 and move_check:
-                if not self.tap_check or self.dx != dx:
-                    pygame.mixer.Sound.play(self.main.sound_effects["tap"])
-                    self.tap_check = True
-                    self.last_move = self.tap_delay
-                    self.dx = dx
-                    move = True
-                elif self.last_move <= 0:
-                    pygame.mixer.Sound.play(self.main.sound_effects["das"])
-                    self.last_move = self.das_delay
-                    move = True
-            elif dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0 or self.hard_drop_check):
-                self.last_drop = self.drop_delay
-                self.last_fall = self.fall_delay
-                move = True
-            elif rot != 0 or self.init_shape:
-                pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
-                self.rot_check = False
-                self.block_rot = block_rot
-                self.block_center = block_center
-                move = True
-            if move:
-                self.block_pos = block_pos
+        # Piece
+        if not ghost:
+            # Lock
+            self.drop_check = drop_check
+            if not self.drop_check:
+                pygame.mixer.Sound.play(self.main.sound_effects["lock"])
+                for block in self.block_pos:
+                    self.game.grid[block[1]][block[0]] = self.color
+                self.game.clear_line()
+                self.game.new_piece(self.dx)
 
-        # Lock
-        if not self.drop_check:
-            pygame.mixer.Sound.play(self.main.sound_effects["lock"])
-            for block in self.block_pos:
-                self.game.grid[block[1]][block[0]] = self.color
-            self.game.clear_line()
-            self.game.new_piece(self.dx, self.tap_check)
+            # Move
+            elif move_check and rot_check:
+                if dx != 0 and move_check:
+                    if not self.tap_check or self.dx != dx:
+                        pygame.mixer.Sound.play(self.main.sound_effects["tap"])
+                        self.tap_check = True
+                        self.last_move = self.tap_delay
+                        self.dx = dx
+                        self.block_pos = block_pos
+                    elif self.last_move <= 0:
+                        pygame.mixer.Sound.play(self.main.sound_effects["das"])
+                        self.last_move = self.das_delay
+                        self.block_pos = block_pos
+                elif dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0 or self.hard_drop_check):
+                    self.last_drop = self.drop_delay
+                    self.last_fall = self.fall_delay
+                    self.block_pos = block_pos
+                elif rot != 0 or self.init_shape:
+                    pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
+                    self.rot_check = False
+                    self.block_rot = block_rot
+                    self.block_center = block_center
+                    self.block_pos = block_pos
+
+        # Ghost
+        else:
+            if drop_check:
+                self.ghost_pos = block_pos
+            else:
+                self.ghost_check = False
 
     def draw(self):
         for block in self.block_pos:
