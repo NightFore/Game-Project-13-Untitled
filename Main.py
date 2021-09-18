@@ -129,7 +129,7 @@ class Tetromino(pygame.sprite.Sprite):
         self.fall_delay = self.game.game_dict["level"][self.game.level]
         self.last_drop = self.drop_delay
         self.last_fall = self.fall_delay
-        self.hard_drop_check = False
+        self.hard_drop_check = True
         self.drop_check = True
 
         # rot
@@ -144,8 +144,11 @@ class Tetromino(pygame.sprite.Sprite):
 
     def get_keys(self):
         # Initialization
-        dx, dy, rot = 0, 0, 0
         keys = pygame.key.get_pressed()
+        dx, dy, rot = 0, 0, 0
+        self.last_move -= 1
+        self.last_drop -= 1
+        self.last_fall -= 1
 
         # Move
         if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and (self.dx == 0 or self.dx == -1):
@@ -157,7 +160,7 @@ class Tetromino(pygame.sprite.Sprite):
             self.tap_check = False
 
         # Soft Drop
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+        if keys[pygame.K_DOWN] or keys[pygame.K_s] or self.last_fall <= 0:
             dy = 1
 
         # Rotate
@@ -168,20 +171,12 @@ class Tetromino(pygame.sprite.Sprite):
 
         # Hard Drop
         if keys[pygame.K_SPACE]:
-            if self.hard_drop_check:
-                self.hard_drop_check = False
+            if not self.hard_drop_check:
+                self.hard_drop_check = True
                 while self.drop_check:
-                    self.last_drop = 0
                     self.update_move(dy=1)
         else:
-            self.hard_drop_check = True
-
-        # Update Last
-        self.last_move -= 1
-        self.last_drop -= 1
-        self.last_fall -= 1
-        if self.last_fall <= 0:
-            dy = 1
+            self.hard_drop_check = False
 
         # Update Move
         if rot:
@@ -226,7 +221,7 @@ class Tetromino(pygame.sprite.Sprite):
                     pygame.mixer.Sound.play(self.main.sound_effects["das"])
                     self.last_move = self.das_delay
                     move = True
-            elif dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0):
+            elif dy != 0 and (self.last_drop <= 0 or self.last_fall <= 0 or self.hard_drop_check):
                 self.last_drop = self.drop_delay
                 self.last_fall = self.fall_delay
                 move = True
