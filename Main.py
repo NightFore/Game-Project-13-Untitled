@@ -73,9 +73,12 @@ class Game:
                 pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
                 self.score += 1200 * (self.level + 1)
 
-            for i in range(max(cleared_lines), len(cleared_lines) - 1, -1):
+            index = 1
+            for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
                 for j in range(len(self.grid[i])):
-                    self.grid[i][j] = self.grid[i - len(cleared_lines)][j]
+                    while i - index in cleared_lines:
+                        index += 1
+                    self.grid[i][j] = self.grid[i - index][j]
             for i in range(len(cleared_lines)):
                 for j in range(len(self.grid[0])):
                     self.grid[i][j] = (0, 0, 0)
@@ -186,7 +189,7 @@ class Tetromino(pygame.sprite.Sprite):
         if dx:
             self.update_move(dx=dx)
             self.ghost_check = True
-        if dy:
+        if dy and not self.hard_drop_check:
             self.update_move(dy=dy)
         if self.ghost_check:
             self.ghost_pos = self.block_pos
