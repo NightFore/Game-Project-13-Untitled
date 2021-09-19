@@ -107,9 +107,6 @@ class Game:
         self.are = are_lock + are_clear
         sprite.kill()
 
-    def get_keys(self):
-        pass
-
     def draw_grid(self):
         pygame.draw.rect(self.main.gameDisplay, (0, 0, 0), (self.grid_pos[0], self.grid_pos[1], self.play_width, self.play_height))
 
@@ -128,9 +125,14 @@ class Game:
     def update(self):
         if self.are > 0:
             self.are -= 1
-            self.get_keys() # WIP
+            self.get_keys()
             if self.are <= 0:
                 self.new_piece()
+
+    def get_keys(self):
+        keys = pygame.key.get_pressed()
+        self.last_dx = -(keys[pygame.K_LEFT] or keys[pygame.K_a]) or (keys[pygame.K_RIGHT] or keys[pygame.K_d])
+
 
 class Tetromino(pygame.sprite.Sprite):
     def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
@@ -259,7 +261,7 @@ class Tetromino(pygame.sprite.Sprite):
 
             # Move
             elif move_check and rot_check:
-                if dx != 0 and move_check:
+                if dx != 0:
                     if not self.tap_check or self.dx != dx:
                         pygame.mixer.Sound.play(self.main.sound_effects["tap"])
                         self.tap_check = True
