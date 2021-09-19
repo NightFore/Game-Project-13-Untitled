@@ -30,22 +30,33 @@ class Game:
         self.start_level = 0
         self.level = self.start_level
         self.score = 0
+        self.last_dx = 0
+        self.are = 0
         self.grid = create_grid()
         self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
         self.new_piece()
 
-    def new_piece(self, dx=0):
+    def new_piece(self):
         for tetromino in self.tetrominoes:
             tetromino.kill()
         self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
-        self.Player.dx = dx
+        self.Player.dx = self.last_dx
 
     def get_shape(self):
         return random.choice(list(self.shape_dict))
 
-    def clear_line(self):
+    def clear_line(self, sprite):
+        # Initialization
+        self.last_dx = sprite.dx
+        height = 0
+        for block in sprite.block_pos:
+            self.grid[block[1]][block[0]] = sprite.color
+            height = max(height, block[1]+1)
+        are_lock = 10 + 2 * ((20 - (height - 2)) // 4)
+
+        # Cleared lines
         cleared_lines = []
         for i in range(len(self.grid)):
             clear = True
@@ -55,7 +66,10 @@ class Game:
             if clear:
                 cleared_lines.append(i)
 
+        are_clear = 0
         if cleared_lines:
+            are_clear = 16 + pygame.time.get_ticks() % 5
+            # Variables
             self.line_count += len(cleared_lines)
             if self.line_count >= min((self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10):
                 self.level = min(self.level + 1, len(self.game_dict["level"]))
@@ -73,6 +87,7 @@ class Game:
                 pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
                 self.score += 1200 * (self.level + 1)
 
+            # Moving lines
             index = 1
             for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
                 for j in range(len(self.grid[i])):
@@ -82,6 +97,18 @@ class Game:
             for i in range(len(cleared_lines)):
                 for j in range(len(self.grid[0])):
                     self.grid[i][j] = (0, 0, 0)
+
+
+        """
+        are: Entry delay / Appearance delay / spawn delay
+        are_lock = 10~18 (10 + 2 for every 4 lines above 2)
+        are_clear = 17~20 (16 + frame counter % 5)
+        """
+        self.are = are_lock + are_clear
+        sprite.kill()
+
+    def get_keys(self):
+        pass
 
     def draw_grid(self):
         pygame.draw.rect(self.main.gameDisplay, (0, 0, 0), (self.grid_pos[0], self.grid_pos[1], self.play_width, self.play_height))
@@ -99,7 +126,11 @@ class Game:
         self.main.draw_text("Level: %d" % self.level, self.main.font_dict["LiberationSerif"], WHITE, (160, 660), align="center")
 
     def update(self):
-        pass
+        if self.are > 0:
+            self.are -= 1
+            self.get_keys() # WIP
+            if self.are <= 0:
+                self.new_piece()
 
 class Tetromino(pygame.sprite.Sprite):
     def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
@@ -224,10 +255,7 @@ class Tetromino(pygame.sprite.Sprite):
             self.drop_check = drop_check
             if not self.drop_check:
                 pygame.mixer.Sound.play(self.main.sound_effects["lock"])
-                for block in self.block_pos:
-                    self.game.grid[block[1]][block[0]] = self.color
-                self.game.clear_line()
-                self.game.new_piece(self.dx)
+                self.game.clear_line(self)
 
             # Move
             elif move_check and rot_check:
