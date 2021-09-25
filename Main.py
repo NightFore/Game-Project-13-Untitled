@@ -47,66 +47,6 @@ class Game:
     def get_shape(self):
         return random.choice(list(self.shape_dict))
 
-    def clear_line(self, sprite):
-        # Initialization
-        self.last_dx = sprite.dx
-        height = 0
-        for block in sprite.block_pos:
-            self.grid[block[1]][block[0]] = sprite.color
-            height = max(height, block[1]+1)
-        are_lock = 10 + 2 * ((20 - (height - 2)) // 4)
-
-        # Cleared lines
-        cleared_lines = []
-        for i in range(len(self.grid)):
-            clear = True
-            for j in range(len(self.grid[i])):
-                if self.grid[i][j] == (0, 0, 0):
-                    clear = False
-            if clear:
-                cleared_lines.append(i)
-
-        are_clear = 0
-        if cleared_lines:
-            are_clear = 16 + pygame.time.get_ticks() % 5
-            # Variables
-            self.line_count += len(cleared_lines)
-            if self.line_count >= min((self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10):
-                self.level = min(self.level + 1, len(self.game_dict["level"]))
-
-            if len(cleared_lines) == 1:
-                pygame.mixer.Sound.play(self.main.sound_effects["single"])
-                self.score += 40 * (self.level + 1)
-            if len(cleared_lines) == 2:
-                pygame.mixer.Sound.play(self.main.sound_effects["double"])
-                self.score += 100 * (self.level + 1)
-            if len(cleared_lines) == 3:
-                pygame.mixer.Sound.play(self.main.sound_effects["triple"])
-                self.score += 300 * (self.level + 1)
-            if len(cleared_lines) == 4:
-                pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
-                self.score += 1200 * (self.level + 1)
-
-            # Moving lines
-            index = 1
-            for i in range(max(cleared_lines), len(cleared_lines)-1, -1):
-                for j in range(len(self.grid[i])):
-                    while i - index in cleared_lines:
-                        index += 1
-                    self.grid[i][j] = self.grid[i - index][j]
-            for i in range(len(cleared_lines)):
-                for j in range(len(self.grid[0])):
-                    self.grid[i][j] = (0, 0, 0)
-
-
-        """
-        are: Entry delay / Appearance delay / spawn delay
-        are_lock = 10~18 (10 + 2 for every 4 lines above 2)
-        are_clear = 17~20 (16 + frame counter % 5)
-        """
-        self.are = are_lock + are_clear
-        sprite.kill()
-
     def draw_grid(self):
         pygame.draw.rect(self.main.gameDisplay, (0, 0, 0), (self.grid_pos[0], self.grid_pos[1], self.play_width, self.play_height))
 
@@ -115,6 +55,78 @@ class Game:
                 dx, dy = j * self.block_size[0], i * self.block_size[1]
                 self.block_surface = init_surface(self.block_surface, self.block_surface_rect, self.grid[i][j], (150, 150, 150))
                 self.main.gameDisplay.blit(self.block_surface, (self.grid_pos[0] + dx, self.grid_pos[1] + dy))
+
+    def clear_line(self, sprite):
+        """
+        are: Entry delay / Appearance delay / spawn delay
+        are_lock = 10~18 (10 + 2 for every 4 lines above 2)
+        are_clear = 17~20 (16 + frame counter % 5)
+        clear_index: Used in animation_clear to sort the lines
+        """
+
+        # Initialization
+        self.last_dx = sprite.dx
+        height = 0
+        for block in sprite.block_pos:
+            self.grid[block[1]][block[0]] = sprite.color
+            height = max(height, block[1]+1)
+        self.are_lock = 10 + 2 * ((20 - (height - 2)) // 4)
+
+        # Cleared lines
+        self.cleared_lines = []
+        for i in range(len(self.grid)):
+            clear = True
+            for j in range(len(self.grid[i])):
+                if self.grid[i][j] == (0, 0, 0):
+                    clear = False
+            if clear:
+                self.cleared_lines.append(i)
+
+        if self.cleared_lines:
+            # Variables
+            self.clear_index = 1
+            self.are_clear = 16 + pygame.time.get_ticks() % 5
+
+            # Level Up
+            self.line_count += len(self.cleared_lines)
+            if self.line_count >= min((self.level + 1) * 10, 100 + (self.level - min(15, self.start_level)) * 10):
+                self.level = min(self.level + 1, len(self.game_dict["level"]))
+
+            # Score
+            if len(self.cleared_lines) == 1:
+                pygame.mixer.Sound.play(self.main.sound_effects["single"])
+                self.score += 40 * (self.level + 1)
+            if len(self.cleared_lines) == 2:
+                pygame.mixer.Sound.play(self.main.sound_effects["double"])
+                self.score += 100 * (self.level + 1)
+            if len(self.cleared_lines) == 3:
+                pygame.mixer.Sound.play(self.main.sound_effects["triple"])
+                self.score += 300 * (self.level + 1)
+            if len(self.cleared_lines) == 4:
+                pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
+                self.score += 1200 * (self.level + 1)
+        else:
+            self.are_clear = 0
+
+        self.are = self.are_lock + self.are_clear
+        sprite.kill()
+
+    def clear_animation(self):
+        if self.cleared_lines:
+            j = self.are - self.are_lock
+            if 0 <= j <= 9:
+                for i in range(max(self.cleared_lines), len(self.cleared_lines)-1, -1):
+                    while i - self.clear_index in self.cleared_lines:
+                        self.clear_index += 1
+                    self.grid[i][j] = self.grid[i - self.clear_index][j]
+            elif j == 10:
+                for i in range(len(self.cleared_lines)):
+                    for j in range(len(self.grid[0])):
+                        self.grid[i][j] = (0, 0, 0)
+
+    def get_keys(self):
+        keys = pygame.key.get_pressed()
+        self.last_dx = -(keys[pygame.K_LEFT] or keys[pygame.K_a]) or (keys[pygame.K_RIGHT] or keys[pygame.K_d])
 
     def draw(self):
         self.draw_grid()
@@ -126,12 +138,9 @@ class Game:
         if self.are > 0:
             self.are -= 1
             self.get_keys()
+            self.clear_animation()
             if self.are <= 0:
                 self.new_piece()
-
-    def get_keys(self):
-        keys = pygame.key.get_pressed()
-        self.last_dx = -(keys[pygame.K_LEFT] or keys[pygame.K_a]) or (keys[pygame.K_RIGHT] or keys[pygame.K_d])
 
 
 class Tetromino(pygame.sprite.Sprite):
