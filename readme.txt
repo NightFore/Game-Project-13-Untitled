@@ -1,9 +1,10 @@
-Commands:
-→ or d: Right
-← or a: Left
-↑ or w: Rotate
-↓ or s: Soft Drop
-Spacebar: Hard Drop
+Controls:
+←/a/4: Left
+→/d/6: Right
+↑/x/w/e/8: Rotate Clockwise
+CTRL/z/q: Rotate Counter-Clockwise
+↓/s/5: Soft Drop
+Space: Hard Drop
 P: Pause
 Esc: Quit
 

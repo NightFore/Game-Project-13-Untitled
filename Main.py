@@ -27,7 +27,7 @@ class Game:
 
     def new_game(self):
         self.line_count = 0
-        self.start_level = 0
+        self.start_level = 9
         self.level = self.start_level
         self.score = 0
         self.last_dx = 0
@@ -125,6 +125,12 @@ class Game:
                         self.grid[i][col] = self.grid[i - index][col]
                     else:
                         self.grid[i][col] = (0, 0, 0)
+            if col == 10:
+                for i in range(len(self.cleared_lines)):
+                    for j in range(len(self.grid[0])):
+                        self.grid[i][j] = (0, 0, 0)
+
+
 
     def get_keys(self):
         keys = pygame.key.get_pressed()
@@ -199,21 +205,23 @@ class Tetromino(pygame.sprite.Sprite):
         self.last_fall -= 1
 
         # Move
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and (self.dx == 0 or self.dx == -1):
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a] or keys[pygame.K_KP4]) and (self.dx == 0 or self.dx == -1):
             dx = -1
-        elif (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and (self.dx == 0 or self.dx == 1):
+        elif (keys[pygame.K_RIGHT] or keys[pygame.K_d] or keys[pygame.K_KP6]) and (self.dx == 0 or self.dx == 1):
             dx = 1
         else:
             self.dx = 0
             self.tap_check = False
 
         # Soft Drop
-        if keys[pygame.K_DOWN] or keys[pygame.K_s] or self.last_fall <= 0:
+        if keys[pygame.K_DOWN] or keys[pygame.K_s] or keys[pygame.K_KP5] or self.last_fall <= 0:
             dy = 1
 
         # Rotate
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            rot = self.rot_check
+        if keys[pygame.K_UP] or keys[pygame.K_x] or keys[pygame.K_w] or keys[pygame.K_e] or keys[pygame.K_KP8]:
+            rot = 1
+        elif keys[pygame.K_RCTRL] or keys[pygame.K_LCTRL] or keys[pygame.K_z] or keys[pygame.K_q]:
+            rot = -1
         else:
             self.rot_check = True
 
@@ -287,7 +295,7 @@ class Tetromino(pygame.sprite.Sprite):
                     self.last_drop = self.drop_delay
                     self.last_fall = self.fall_delay
                     self.block_pos = block_pos
-                elif rot != 0 or self.init_shape:
+                elif rot != 0 and self.rot_check or self.init_shape:
                     pygame.mixer.Sound.play(self.main.sound_effects["rotate"])
                     self.rot_check = False
                     self.block_rot = block_rot
