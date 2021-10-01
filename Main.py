@@ -58,10 +58,9 @@ class Game:
 
     def clear_line(self, sprite):
         """
-        are: Entry delay / Appearance delay / spawn delay
+        are: Entry delay / Appearance delay / Spawn delay
         are_lock = 10~18 (10 + 2 for every 4 lines above 2)
         are_clear = 17~20 (16 + frame counter % 5)
-        clear_index: Used in animation_clear to sort the lines
         """
 
         # Initialization
@@ -83,8 +82,6 @@ class Game:
                 self.cleared_lines.append(i)
 
         if self.cleared_lines:
-            # Variables
-            self.clear_index = 1
             self.are_clear = 16 + pygame.time.get_ticks() % 5
 
             # Level Up
@@ -96,13 +93,13 @@ class Game:
             if len(self.cleared_lines) == 1:
                 pygame.mixer.Sound.play(self.main.sound_effects["single"])
                 self.score += 40 * (self.level + 1)
-            if len(self.cleared_lines) == 2:
+            elif len(self.cleared_lines) == 2:
                 pygame.mixer.Sound.play(self.main.sound_effects["double"])
                 self.score += 100 * (self.level + 1)
-            if len(self.cleared_lines) == 3:
+            elif len(self.cleared_lines) == 3:
                 pygame.mixer.Sound.play(self.main.sound_effects["triple"])
                 self.score += 300 * (self.level + 1)
-            if len(self.cleared_lines) == 4:
+            elif len(self.cleared_lines) == 4:
                 pygame.mixer.Sound.play(self.main.sound_effects["tetris"])
                 self.score += 1200 * (self.level + 1)
         else:
@@ -112,17 +109,22 @@ class Game:
         sprite.kill()
 
     def clear_animation(self):
+        """
+        0 <= col <= 9: Clear and move each line column by column
+        index: Increment by one when the index of the line to be moved is a line to clear
+        """
+
         if self.cleared_lines:
-            j = self.are - self.are_lock
-            if 0 <= j <= 9:
-                for i in range(max(self.cleared_lines), len(self.cleared_lines)-1, -1):
-                    while i - self.clear_index in self.cleared_lines:
-                        self.clear_index += 1
-                    self.grid[i][j] = self.grid[i - self.clear_index][j]
-            elif j == 10:
-                for i in range(len(self.cleared_lines)):
-                    for j in range(len(self.grid[0])):
-                        self.grid[i][j] = (0, 0, 0)
+            col = self.are - self.are_lock
+            if 0 <= col <= 9:
+                index = 1
+                for i in range(max(self.cleared_lines), max(self.cleared_lines) - min(self.cleared_lines), -1):
+                    while i - index in self.cleared_lines:
+                        index += 1
+                    if i - index >= 0:
+                        self.grid[i][col] = self.grid[i - index][col]
+                    else:
+                        self.grid[i][col] = (0, 0, 0)
 
     def get_keys(self):
         keys = pygame.key.get_pressed()
