@@ -27,7 +27,7 @@ class Game:
 
     def new_game(self):
         self.line_count = 0
-        self.start_level = 9
+        self.start_level = 0
         self.level = self.start_level
         self.score = 0
         self.last_dx = 0
