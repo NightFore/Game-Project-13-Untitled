@@ -25,9 +25,13 @@ class Game:
         self.block_surface = pygame.Surface(self.block_size)
         self.block_surface_rect = (self.block_border_size[0], self.block_border_size[1], self.block_size[0] - 2 * self.block_border_size[0], self.block_size[1] - 2 * self.block_border_size[1])
 
+        # WIP
+        self.start_level = 0
+        self.wip = [0, 9, 18]
+        self.wip_index = 0
+
     def new_game(self):
         self.line_count = 0
-        self.start_level = 0
         self.level = self.start_level
         self.score = 0
         self.last_dx = 0
@@ -36,6 +40,11 @@ class Game:
         self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
         self.new_piece()
+
+    def change_level(self):
+        self.wip_index = (self.wip_index + 1) % len(self.wip)
+        self.start_level = self.wip[self.wip_index]
+        self.new_game()
 
     def new_piece(self):
         for tetromino in self.tetrominoes:
@@ -443,7 +452,7 @@ MAIN_DICT = {
         },
         "main_menu": {
             "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "action": "sprite.game.game.new_game"},
-            "load_game": {"type": "type_1", "pos": (20, 90), "text": "WIP"},
+            "change_level": {"type": "type_1", "pos": (20, 90), "text": "Level 0/9/18", "action": "sprite.game.game.change_level"},
             "options": {"type": "type_1", "pos": (20, 160), "text": "WIP"},
             "exit": {"type": "type_1", "pos": (20, 230), "text": "Exit", "action": "sprite.game.quit_game"},
         },
