@@ -8,7 +8,7 @@ vec = pygame.math.Vector2
 class Button(pygame.sprite.Sprite):
     def __init__(self, main, group, dict, data, item, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
+        init_sprite(self, main, group, dict, data, item, parent, variable, action)
 
     def init(self):
         init_sprite_surface(self)

@@ -7,7 +7,7 @@ vec = pygame.math.Vector2
 """
     Sprite initialization functions
 """
-def init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action):
+def init_sprite(self, main, group, dict, data, item, parent, variable, action):
     # Class
     self.main = main
     self.game = main.game
@@ -21,7 +21,10 @@ def init_sprite_WIP(self, main, group, dict, data, item, parent, variable, actio
     self.data = data
     self.item = item
     self.object = self.dict[self.data][self.item]
-    self.settings = self.dict["settings"][self.object["type"]]
+    if "type" in self.object:
+        self.settings = self.dict["settings"][self.object["type"]]
+    else:
+        self.settings = self.dict["settings"][self.data]
 
     # Variable
     self.parent = parent
@@ -79,105 +82,6 @@ def init_sprite_surface(self):
     self.surface = pygame.Surface(self.size)
     self.surface_rect = (self.border_size[0], self.border_size[1], self.size[0] - 2*self.border_size[0], self.size[1] - 2*self.border_size[1])
     self.rect = self.main.align_rect(self.surface, self.pos[0], self.pos[1], self.align)
-
-
-
-
-
-
-
-
-def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None, move=False):
-    # Initialization -------------- #
-    sprite.game = game
-    sprite.groups = sprite.game.all_sprites, group
-    sprite.data = data
-    sprite.item = item
-    sprite.parent = parent
-    sprite.variable = variable
-    sprite.action = action
-    pygame.sprite.Sprite.__init__(sprite, sprite.groups)
-
-    # Dict ------------------------ #
-    sprite.dict = dict
-    sprite.object = sprite.dict[sprite.data][sprite.item]
-    sprite.settings = sprite.dict["type"][sprite.object["type"]]
-
-    # Arguments Settings ---------- #
-    if "variable" in sprite.object and sprite.variable is None:
-        if isinstance(sprite.object["variable"], str):
-            sprite.variable = eval(sprite.object["variable"])
-        else:
-            sprite.variable = sprite.object["variable"]
-    if "action" in sprite.object and sprite.action is None:
-        if isinstance(sprite.object["action"], str):
-            sprite.action = eval(sprite.object["action"])
-        else:
-            sprite.action = sprite.object["action"]
-
-    # Settings
-    sprite.pos = sprite.object["pos"]
-    sprite.size = sprite.settings["size"]
-    sprite.center = sprite.settings["align"]
-    sprite.surface = pygame.Surface(sprite.size)
-    sprite.rect = sprite.game.align_rect(sprite.surface, sprite.pos[0], sprite.pos[1], sprite.center)
-
-    # Border
-    sprite.border_size = sprite.settings["border_size"]
-    sprite.border_color = sprite.settings["border_color"]
-    sprite.surface_rect = (sprite.border_size[0], sprite.border_size[1], sprite.size[0] - 2*sprite.border_size[0], sprite.size[1] - 2*sprite.border_size[1])
-
-    if move:
-        sprite.pos = vec(sprite.object["pos"][:])
-        sprite.pos_dt = vec(0, 0)
-        sprite.vel = vec(0, 0)
-        sprite.move_speed = vec(sprite.settings["move_speed"])
-        sprite.hit_rect = sprite.rect
-
-def init_sprite_2(sprite, main, dict, group, data, item, parent=None, variable=None, action=None):
-    # Initialization -------------- #
-    sprite.main = main
-    sprite.game = sprite.main.game
-    sprite.groups = sprite.main.all_sprites, group
-    sprite.data = data
-    sprite.item = item
-    sprite.parent = parent
-    sprite.variable = variable
-    sprite.action = action
-    pygame.sprite.Sprite.__init__(sprite, sprite.groups)
-
-    # Dict ------------------------ #
-    sprite.dict = dict
-    sprite.object = sprite.dict[sprite.data][sprite.item]
-    sprite.settings = sprite.dict[sprite.data]["settings"]
-
-    # Arguments Settings ---------- #
-    if "variable" in sprite.object and sprite.variable is None:
-        sprite.variable = sprite.object["variable"]
-    if "action" in sprite.object and sprite.action is None:
-        sprite.action = eval(sprite.object["action"])
-
-    # Settings
-    sprite.pos = vec(sprite.settings["pos"][:])
-    sprite.size = sprite.settings["size"]
-    sprite.center = sprite.settings["align"]
-    sprite.surface = pygame.Surface(sprite.size)
-    sprite.color = sprite.object["color"]
-    sprite.rect = sprite.main.align_rect(sprite.surface, int(sprite.pos[0]), int(sprite.pos[1]), sprite.center)
-
-    # Border
-    if "border_size" in sprite.settings:
-        if "border_size" in sprite.settings:
-            sprite.border_size = sprite.settings["border_size"]
-        elif "border_size" in sprite.object:
-            sprite.border_size = sprite.object["border_size"]
-        if "border_color" in sprite.settings:
-            sprite.border_color = sprite.settings["border_color"]
-        elif "border_color" in sprite.object:
-            sprite.border_color = sprite.object["border_color"]
-        sprite.surface_rect = (sprite.border_size[0], sprite.border_size[1], sprite.size[0] - 2*sprite.border_size[0], sprite.size[1] - 2*sprite.border_size[1])
-    else:
-        sprite.surface_rect = (0, 0, sprite.size[0], sprite.size[1])
 
 def init_surface(surface, surface_rect, color, border_color=None):
     surface = surface.copy()

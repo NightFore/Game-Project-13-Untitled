@@ -163,7 +163,7 @@ class Game:
 class Tetromino(pygame.sprite.Sprite):
     def __init__(self, main, group, dict, data, item, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
+        init_sprite(self, main, group, dict, data, item, parent, variable, action)
 
     def init(self):
         init_sprite_surface(self)
@@ -345,7 +345,7 @@ class Tetromino(pygame.sprite.Sprite):
 class Next_Piece(pygame.sprite.Sprite):
     def __init__(self, main, group, dict, data, item, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
+        init_sprite(self, main, group, dict, data, item, parent, variable, action)
 
     def init(self):
         init_sprite_surface(self)
@@ -483,22 +483,22 @@ MAIN_DICT = {
             "next_piece": {"pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6)},
         },
         "tetromino": {
-            "I": {"type": "tetromino", "color": (1, 240, 241), "border_color": (0, 222, 221)},
-            "J": {"type": "tetromino", "color": (1, 1, 238), "border_color": (6, 8, 165)},
-            "L": {"type": "tetromino", "color": (240, 160, 0), "border_color": (220, 145, 0)},
-            "O": {"type": "tetromino", "color": (240, 241, 0), "border_color": (213, 213, 0)},
-            "S": {"type": "tetromino", "color": (0, 241, 0), "border_color": (0, 218, 0)},
-            "T": {"type": "tetromino", "color": (160, 0, 243), "border_color": (147, 0, 219)},
-            "Z": {"type": "tetromino", "color": (238, 2, 0), "border_color": (215, 0, 0)},
+            "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
+            "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
+            "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
+            "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
+            "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
+            "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "next_piece": {
-            "I": {"type": "next_piece", "color": (1, 240, 241), "border_color": (0, 222, 221)},
-            "J": {"type": "next_piece", "color": (1, 1, 238), "border_color": (6, 8, 165)},
-            "L": {"type": "next_piece", "color": (240, 160, 0), "border_color": (220, 145, 0)},
-            "O": {"type": "next_piece", "color": (240, 241, 0), "border_color": (213, 213, 0)},
-            "S": {"type": "next_piece", "color": (0, 241, 0), "border_color": (0, 218, 0)},
-            "T": {"type": "next_piece", "color": (160, 0, 243), "border_color": (147, 0, 219)},
-            "Z": {"type": "next_piece", "color": (238, 2, 0), "border_color": (215, 0, 0)},
+            "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
+            "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
+            "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
+            "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
+            "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
+            "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "shape": {
             "S": [['.....',
