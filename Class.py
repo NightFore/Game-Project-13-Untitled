@@ -6,53 +6,68 @@ from Function import *
 vec = pygame.math.Vector2
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
+    def __init__(self, main, group, dict, data, item, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite(self, game, dict, group, data, item, parent, variable, action)
+        init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
 
-        # Surface --------------------- #
-        self.inactive_surface = init_surface(self.surface, self.surface_rect, self.settings["inactive_color"], border_color=self.border_color)
-        self.active_surface = init_surface(self.surface, self.surface_rect, self.settings["active_color"], border_color=self.border_color)
+    def init(self):
+        init_sprite_surface(self)
+        init_sprite_text(self)
 
-        # Font Settings --------------- #
-        self.text = self.object["text"]
-        self.text_pos = self.rect[0] + self.rect[2] / 2, self.rect[1] + self.rect[3] / 2
-        self.font = self.game.font_dict[self.settings["font"]]
-        self.font_color = self.settings["font_color"]
+    def load(self):
+        # Surface
+        self.active_color = self.settings["active_color"]
+        self.inactive_color = self.settings["inactive_color"]
 
-        # Sound Settings -------------- #
-        self.sound_active = self.settings["sound_active"]
+        # Sound
         self.sound_action = self.settings["sound_action"]
+        self.sound_active = self.settings["sound_active"]
+        self.sound_inactive = self.settings["sound_inactive"]
 
-        # Check ----------------------- #
-        self.font_check = False
+    def new(self):
+        # Surface
+        self.surface_active = init_surface(self.surface, self.surface_rect, self.active_color, self.border_color)
+        self.surface_inactive = init_surface(self.surface, self.surface_rect, self.inactive_color, self.border_color)
+
+        # Sound
         self.sound_check = False
 
+        # Action
+        if "action" in self.object:
+            self.action = eval(self.object["action"])
+
     def draw(self):
-        self.game.gameDisplay.blit(self.surface, self.rect)
-        if self.text is not None:
-            if self.font is not None:
-                self.game.draw_text(self.text, self.font, self.font_color, self.text_pos, "center")
-            elif not self.font_check:
-                self.font_check = True
-                print("Font not initialized, text: %s" % self.text)
+        # Surface
+        self.main.gameDisplay.blit(self.surface, self.rect)
+
+        # Text
+        if self.font_check and self.text is not None:
+            self.main.draw_text(self.text, self.font, self.font_color, self.text_pos, "center")
 
     def update(self):
-        if self.rect.collidepoint(self.game.mouse):
-            self.surface = self.active_surface
-            if self.sound_active is not None and not self.sound:
+        # Collision
+        if self.rect.collidepoint(self.main.mouse):
+            # Active
+            self.surface = self.surface_active
+            if self.sound_active is not None and not self.sound_check:
                 pygame.mixer.Sound.play(self.sound_active)
                 self.sound_check = True
-            if self.game.click[1] and self.action is not None:
+
+            # Action
+            if self.main.click[1]:
                 if self.sound_action is not None:
                     pygame.mixer.Sound.play(self.sound_action)
-                if self.variable is not None:
-                    self.action(self.variable)
-                else:
-                    self.action()
+                if self.action is not None:
+                    if self.variable is not None:
+                        self.action(self.variable)
+                    else:
+                        self.action()
         else:
-            self.surface = self.inactive_surface
-            self.sound_check = False
+            # Inactive
+            self.surface = self.surface_inactive
+            if self.sound_inactive is not None and self.sound_check:
+                pygame.mixer.Sound.play(self.sound_inactive)
+                self.sound_check = False
 
 class UI(pygame.sprite.Sprite):
     def __init__(self, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):

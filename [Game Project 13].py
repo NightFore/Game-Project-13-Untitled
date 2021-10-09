@@ -88,7 +88,6 @@ class Main:
         self.font_dict = self.main_dict["font"]
         self.menu_dict = self.main_dict["menu"]
         self.button_dict = self.main_dict["button"]
-        self.button_type = self.button_dict["type"]
 
         self.sound_effects = {}
         for sound in self.sound_dict:

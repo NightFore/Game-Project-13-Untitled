@@ -7,6 +7,66 @@ vec = pygame.math.Vector2
 """
     Sprite initialization functions
 """
+def init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action):
+    # Class
+    self.main = main
+    self.game = main.game
+
+    # Group
+    self.groups = self.main.all_sprites, group
+    pygame.sprite.Sprite.__init__(self, self.groups)
+
+    # Dict
+    self.dict = dict
+    self.data = data
+    self.item = item
+    self.object = self.dict[self.data][self.item]
+    self.settings = self.dict["settings"][self.object["type"]]
+
+    # Variable
+    self.parent = parent
+    self.variable = variable
+    self.action = action
+
+    # Initialization
+    self.init()
+    self.load()
+    self.new()
+
+def init_sprite_text(self):
+    # Text
+    if "text" in self.object:
+        self.text = self.object["text"]
+    else:
+        self.text = None
+    self.text_pos = self.rect[0] + self.rect[2] / 2, self.rect[1] + self.rect[3] / 2
+
+    # Font
+    self.font = self.main.font_dict[self.settings["font"]]
+    self.font_color = self.settings["font_color"]
+
+    # Check
+    self.font_check = self.font is not None
+    if not self.font_check:
+        print("Font not initialized, text: %s" % self.text)
+
+def init_sprite_surface(self):
+    self.pos = self.object["pos"]
+    self.size = self.settings["size"]
+    self.align = self.settings["align"]
+    self.border_size = self.settings["border_size"]
+    self.border_color = self.settings["border_color"]
+    self.surface = pygame.Surface(self.size)
+    self.surface_rect = (self.border_size[0], self.border_size[1], self.size[0] - 2*self.border_size[0], self.size[1] - 2*self.border_size[1])
+    self.rect = self.main.align_rect(self.surface, self.pos[0], self.pos[1], self.align)
+
+
+
+
+
+
+
+
 def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None, move=False):
     # Initialization -------------- #
     sprite.game = game
@@ -54,7 +114,7 @@ def init_sprite(sprite, game, dict, group=None, data=None, item=None, parent=Non
         sprite.move_speed = vec(sprite.settings["move_speed"])
         sprite.hit_rect = sprite.rect
 
-def init_sprite_2(sprite, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None, move=False):
+def init_sprite_2(sprite, main, dict, group, data, item, parent=None, variable=None, action=None):
     # Initialization -------------- #
     sprite.main = main
     sprite.game = sprite.main.game

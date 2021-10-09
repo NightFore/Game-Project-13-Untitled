@@ -390,7 +390,7 @@ def init_menu(main, menu, clear=True):
     main.update_background(main.background_dict[menu_dict["background"]])
 
     for button in main.button_dict[menu]:
-        Button(main, main.button_dict, main.buttons, data=menu, item=button)
+        Button(main, main.buttons, main.button_dict, data=menu, item=button)
 
 def clear_menu(main):
     for sprite in main.all_sprites:
@@ -442,19 +442,19 @@ MAIN_DICT = {
         },
     },
     "button": {
-        "type": {
-            "type_1": {
+        "settings": {
+            "default": {
                 "align": "nw", "size": (280, 50),
                 "border": True, "border_size": (5, 5), "border_color": BLACK,
                 "font": "LiberationSerif", "font_color": WHITE,
                 "inactive_color": LIGHT_SKY_BLUE, "active_color": DARK_SKY_BLUE,
-                "sound_active": None, "sound_action": None},
+                "sound_action": None, "sound_active": None, "sound_inactive": None},
         },
         "main_menu": {
-            "new_game": {"type": "type_1", "pos": (20, 20), "text": "New Game", "action": "sprite.game.game.new_game"},
-            "change_level": {"type": "type_1", "pos": (20, 90), "text": "Level 0/9/18", "action": "sprite.game.game.change_level"},
-            "options": {"type": "type_1", "pos": (20, 160), "text": "WIP"},
-            "exit": {"type": "type_1", "pos": (20, 230), "text": "Exit", "action": "sprite.game.quit_game"},
+            "new_game": {"type": "default", "pos": (20, 20), "text": "New Game", "action": "self.game.new_game"},
+            "change_level": {"type": "default", "pos": (20, 90), "text": "Level 0/9/18", "action": "self.game.change_level"},
+            "options": {"type": "default", "pos": (20, 160)},
+            "exit": {"type": "default", "pos": (20, 230), "text": "Exit", "action": "self.main.quit_game"},
         },
     },
     "game": {
@@ -463,7 +463,10 @@ MAIN_DICT = {
             "tap_delay": 16, "das_delay": 6, "drop_delay": 2},
         "tetromino": {
             "settings": {"pos": (5, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},
-            "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "settings_WIP": {
+                "default": {}
+            },
+            "I": {"type_WIP": "default", "color": (1, 240, 241), "border_color": (0, 222, 221)},
             "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
             "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
             "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
