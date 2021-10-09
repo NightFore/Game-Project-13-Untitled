@@ -51,11 +51,31 @@ def init_sprite_text(self):
         print("Font not initialized, text: %s" % self.text)
 
 def init_sprite_surface(self):
-    self.pos = self.object["pos"]
-    self.size = self.settings["size"]
-    self.align = self.settings["align"]
-    self.border_size = self.settings["border_size"]
-    self.border_color = self.settings["border_color"]
+    if "pos" in self.object:
+        self.pos = self.object["pos"]
+    if "pos" in self.settings:
+        self.pos = self.settings["pos"]
+    if "size" in self.object:
+        self.size = self.object["size"]
+    if "size" in self.settings:
+        self.size = self.settings["size"]
+    if "align" in self.object:
+        self.align = self.object["align"]
+    if "align" in self.settings:
+        self.align = self.settings["align"]
+    if "border_size" in self.object:
+        self.border_size = self.object["border_size"]
+    if "border_size" in self.settings:
+        self.border_size = self.settings["border_size"]
+    if "color" in self.object:
+        self.color = self.object["color"]
+    if "color" in self.settings:
+        self.color = self.settings["color"]
+    if "border_color" in self.object:
+        self.border_color = self.object["border_color"]
+    if "border_color" in self.settings:
+        self.border_color = self.settings["border_color"]
+
     self.surface = pygame.Surface(self.size)
     self.surface_rect = (self.border_size[0], self.border_size[1], self.size[0] - 2*self.border_size[0], self.size[1] - 2*self.border_size[1])
     self.rect = self.main.align_rect(self.surface, self.pos[0], self.pos[1], self.align)

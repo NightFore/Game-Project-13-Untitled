@@ -51,7 +51,7 @@ class Game:
             tetromino.kill()
         self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
         self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
-        self.Player.dx = self.last_dx
+        self.Player.last_dx = self.last_dx
 
     def get_shape(self):
         return random.choice(list(self.shape_dict))
@@ -73,7 +73,7 @@ class Game:
         """
 
         # Initialization
-        self.last_dx = sprite.dx
+        self.last_dx = sprite.last_dx
         height = 0
         for block in sprite.block_pos:
             self.grid[block[1]][block[0]] = sprite.color
@@ -163,27 +163,35 @@ class Game:
 class Tetromino(pygame.sprite.Sprite):
     def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite_2(self, main, dict, group, data, item, parent, variable, action)
-        self.surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
-        self.init()
+        init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
 
     def init(self):
+        init_sprite_surface(self)
+        self.block_surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
+
+    def load(self):
         # Settings
-        self.settings = self.game.settings_dict
         self.shapes = self.game.shape_dict[self.item]
-        self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
-        self.offset = -2, -2
 
         # dx
-        self.dx = 0
         self.tap_delay = self.settings["tap_delay"]
         self.das_delay = self.settings["das_delay"]
-        self.last_move = self.das_delay
-        self.tap_check = True
 
         # dy
         self.drop_delay = self.settings["drop_delay"]
         self.fall_delay = self.game.game_dict["level"][self.game.level]
+
+    def new(self):
+        # Settings
+        self.block_pos = [[int(self.pos[0]), int(self.pos[1])]]
+        self.offset = -2, -2
+
+        # dx
+        self.last_dx = 0
+        self.last_move = self.das_delay
+        self.tap_check = True
+
+        # dy
         self.last_drop = self.drop_delay
         self.last_fall = self.fall_delay
         self.hard_drop_check = True
@@ -194,16 +202,16 @@ class Tetromino(pygame.sprite.Sprite):
         self.block_center = 0
         self.rot_check = True
 
-        # Initializing Piece
+        # Initializing Block
         self.init_shape = True
         self.update_move()
         self.init_shape = False
 
-        # Initializing Ghost Piece
+        # Initializing Ghost
         self.ghost_pos = self.block_pos
-        self.ghost_check = True
-        self.ghost_surface = pygame.Surface.copy(self.surface)
+        self.ghost_surface = pygame.Surface.copy(self.block_surface)
         self.ghost_surface.set_alpha(125)
+        self.ghost_check = True
 
     def get_keys(self):
         # Initialization
@@ -214,12 +222,12 @@ class Tetromino(pygame.sprite.Sprite):
         self.last_fall -= 1
 
         # Move
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a] or keys[pygame.K_KP4]) and (self.dx == 0 or self.dx == -1):
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a] or keys[pygame.K_KP4]) and self.last_dx != 1:
             dx = -1
-        elif (keys[pygame.K_RIGHT] or keys[pygame.K_d] or keys[pygame.K_KP6]) and (self.dx == 0 or self.dx == 1):
+        elif (keys[pygame.K_RIGHT] or keys[pygame.K_d] or keys[pygame.K_KP6]) and self.last_dx != -1:
             dx = 1
         else:
-            self.dx = 0
+            self.last_dx = 0
             self.tap_check = False
 
         # Soft Drop
@@ -290,11 +298,11 @@ class Tetromino(pygame.sprite.Sprite):
             # Move
             elif move_check and rot_check:
                 if dx != 0:
-                    if not self.tap_check or self.dx != dx:
+                    if not self.tap_check or self.last_dx != dx:
                         pygame.mixer.Sound.play(self.main.sound_effects["tap"])
                         self.tap_check = True
                         self.last_move = self.tap_delay
-                        self.dx = dx
+                        self.last_dx = dx
                         self.block_pos = block_pos
                     elif self.last_move <= 0:
                         pygame.mixer.Sound.play(self.main.sound_effects["das"])
@@ -323,7 +331,7 @@ class Tetromino(pygame.sprite.Sprite):
             rect = self.rect.copy()
             rect.x = self.game.grid_pos[0] + block[0] * self.game.block_size[0]
             rect.y = self.game.grid_pos[1] + block[1] * self.game.block_size[1]
-            self.main.gameDisplay.blit(self.surface, rect)
+            self.main.gameDisplay.blit(self.block_surface, rect)
 
         for block in self.ghost_pos:
             rect = self.rect.copy()
@@ -400,7 +408,7 @@ def main_menu(main, menu):
     init_menu(main, menu)
     main.game.new_game()
 
-def pause_menu(main, menu):
+def pause_menu(main):
     main.paused = not main.paused
 
 MAIN_DICT = {
@@ -418,7 +426,7 @@ MAIN_DICT = {
         "das": "se_maoudamashii_system_21.ogg",
         "rotate": "se_maoudamashii_system_17.ogg",
         "collide": "se_maoudamashii_noise_16.ogg",
-        "lock": "se_maoudamashii_system_14.ogg",  ### Change se_maoudamashii_fight_07
+        "lock": "se_maoudamashii_system_14.ogg",  # Change se_maoudamashii_fight_07
         "single": "se_maoudamashii_retro_04.ogg",
         "double": "se_maoudamashii_retro_04.ogg",  # se_maoudamashii_retro_03
         "triple": "se_maoudamashii_retro_04.ogg",  # se_maoudamashii_retro_07
@@ -460,19 +468,19 @@ MAIN_DICT = {
     "game": {
         "settings": {
             "play_width": 300, "play_height": 600, "block_size": (30, 30), "block_border_size": (2, 2),
-            "tap_delay": 16, "das_delay": 6, "drop_delay": 2},
-        "tetromino": {
-            "settings": {"pos": (5, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6)},
-            "settings_WIP": {
-                "default": {}
+            "tetromino": {
+                "pos": (5, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6),
+                "tap_delay": 16, "das_delay": 6, "drop_delay": 2
             },
-            "I": {"type_WIP": "default", "color": (1, 240, 241), "border_color": (0, 222, 221)},
-            "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
-            "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
-            "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
-            "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
-            "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
-            "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
+        },
+        "tetromino": {
+            "I": {"type": "tetromino", "color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "J": {"type": "tetromino", "color": (1, 1, 238), "border_color": (6, 8, 165)},
+            "L": {"type": "tetromino", "color": (240, 160, 0), "border_color": (220, 145, 0)},
+            "O": {"type": "tetromino", "color": (240, 241, 0), "border_color": (213, 213, 0)},
+            "S": {"type": "tetromino", "color": (0, 241, 0), "border_color": (0, 218, 0)},
+            "T": {"type": "tetromino", "color": (160, 0, 243), "border_color": (147, 0, 219)},
+            "Z": {"type": "tetromino", "color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "next_piece": {
             "settings": {"pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6)},
