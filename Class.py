@@ -68,32 +68,3 @@ class Button(pygame.sprite.Sprite):
             if self.sound_inactive is not None and self.sound_check:
                 pygame.mixer.Sound.play(self.sound_inactive)
                 self.sound_check = False
-
-class UI(pygame.sprite.Sprite):
-    def __init__(self, game, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
-        # Initialization -------------- #
-        init_sprite(self, game, dict, group, data, item, parent, variable, action)
-
-        # Surface --------------------- #
-        self.surface = init_surface(self.surface, self.surface_rect, self.settings["color"], border_color=self.border_color)
-
-        # Font Settings --------------- #
-        self.text = self.object["text"]
-        self.text_pos = self.rect[0] + self.rect[2] / 2, self.rect[1] + self.rect[3] / 2
-        self.font = self.game.font_dict[self.settings["font"]]
-        self.font_color = self.settings["font_color"]
-
-        # Check ----------------------- #
-        self.font_check = False
-
-    def draw(self):
-        self.game.gameDisplay.blit(self.surface, self.rect)
-        if self.text is not None:
-            if self.font is not None:
-                self.game.draw_text(self.text, self.font, self.font_color, self.text_pos, "center")
-            elif not self.font_check:
-                self.font_check = True
-                print("Font not initialized, text: %s" % self.text)
-
-    def update(self):
-        pass

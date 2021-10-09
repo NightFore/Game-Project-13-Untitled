@@ -38,7 +38,7 @@ class Game:
         self.are = 0
         self.grid = create_grid()
         self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
-        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
+        self.Next_Piece = Next_Piece(self.main, self.tetrominoes, self.game_dict, data="next_piece", item=self.get_shape())
         self.new_piece()
 
     def change_level(self):
@@ -49,8 +49,8 @@ class Game:
     def new_piece(self):
         for tetromino in self.tetrominoes:
             tetromino.kill()
-        self.Player = Tetromino(self.main, self.game_dict, self.tetrominoes, data="tetromino", item=self.Next_Piece.item)
-        self.Next_Piece = Next_Piece(self.main, self.game_dict, self.tetrominoes, data="next_piece", item=self.get_shape())
+        self.Player = Tetromino(self.main, self.tetrominoes, self.game_dict, data="tetromino", item=self.Next_Piece.item)
+        self.Next_Piece = Next_Piece(self.main, self.tetrominoes, self.game_dict, data="next_piece", item=self.get_shape())
         self.Player.last_dx = self.last_dx
 
     def get_shape(self):
@@ -161,7 +161,7 @@ class Game:
 
 
 class Tetromino(pygame.sprite.Sprite):
-    def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
+    def __init__(self, main, group, dict, data, item, parent=None, variable=None, action=None):
         # Initialization -------------- #
         init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
 
@@ -343,18 +343,24 @@ class Tetromino(pygame.sprite.Sprite):
         self.get_keys()
 
 class Next_Piece(pygame.sprite.Sprite):
-    def __init__(self, main, dict, group=None, data=None, item=None, parent=None, variable=None, action=None):
+    def __init__(self, main, group, dict, data, item, parent=None, variable=None, action=None):
         # Initialization -------------- #
-        init_sprite_2(self, main, dict, group, data, item, parent, variable, action)
-        self.surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
-        self.init()
+        init_sprite_WIP(self, main, group, dict, data, item, parent, variable, action)
 
     def init(self):
+        init_sprite_surface(self)
+        self.block_surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
+
+    def load(self):
         self.shape = self.game.shape_dict[self.item][0]
+
+    def new(self):
+        # Initialization
         len_x, len_y = len(self.shape[0]), len(self.shape)
         x_min, x_max = len_x, 0
         y_min, y_max = len_y, 0
 
+        # Position
         self.block_pos = []
         for y, line in enumerate(self.shape):
             for x, column in enumerate(line):
@@ -365,24 +371,26 @@ class Next_Piece(pygame.sprite.Sprite):
         width = (abs(x_min - x_max) + 1) * self.game.block_size[0]
         height = (abs(y_min - y_max) + 1) * self.game.block_size[1]
 
-        block_surface = self.surface
-        self.surface = pygame.Surface((width, height))
-        self.rect = self.main.align_rect(self.surface, int(self.pos[0]), int(self.pos[1] + self.game.block_size[1]/2), self.center)
+        # Block Surface
+        block_surface = self.block_surface
+        self.block_surface = pygame.Surface((width, height))
+        self.rect = self.main.align_rect(self.block_surface, int(self.pos[0]), int(self.pos[1] + self.game.block_size[1]/2), self.align)
         for block in self.block_pos:
             rect = self.rect.copy()
             rect.x = (block[0]-x_min) * self.game.block_size[0]
             rect.y = (block[1]-y_min) * self.game.block_size[1]
-            self.surface.blit(block_surface, rect)
+            self.block_surface.blit(block_surface, rect)
 
+        # Box
         box_width, box_height = len_x * self.game.block_size[0], len_y * self.game.block_size[1]
         self.box_surface = pygame.Surface((box_width, box_height))
-        self.box_rect = self.main.align_rect(self.box_surface, int(self.pos[0]), int(self.pos[1]), self.center)
+        self.box_rect = self.main.align_rect(self.box_surface, int(self.pos[0]), int(self.pos[1]), self.align)
         self.box_surface_rect = (6, 6, box_width - 2*6, box_height - 2*6)
         self.box_surface = init_surface(self.box_surface, self.box_surface_rect, (0, 0, 0), (150, 150, 150))
 
     def draw(self):
         self.main.gameDisplay.blit(self.box_surface, self.box_rect)
-        self.main.gameDisplay.blit(self.surface, self.rect)
+        self.main.gameDisplay.blit(self.block_surface, self.rect)
         self.main.draw_text("NEXT", self.main.font_dict["LiberationSerif"], WHITE, (self.pos[0], self.pos[1] - self.game.block_size[1]), align="s")
 
     def update(self):
@@ -472,6 +480,7 @@ MAIN_DICT = {
                 "pos": (5, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6),
                 "tap_delay": 16, "das_delay": 6, "drop_delay": 2
             },
+            "next_piece": {"pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6)},
         },
         "tetromino": {
             "I": {"type": "tetromino", "color": (1, 240, 241), "border_color": (0, 222, 221)},
@@ -483,14 +492,13 @@ MAIN_DICT = {
             "Z": {"type": "tetromino", "color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "next_piece": {
-            "settings": {"pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6)},
-            "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
-            "J": {"color": (1, 1, 238), "border_color": (6, 8, 165)},
-            "L": {"color": (240, 160, 0), "border_color": (220, 145, 0)},
-            "O": {"color": (240, 241, 0), "border_color": (213, 213, 0)},
-            "S": {"color": (0, 241, 0), "border_color": (0, 218, 0)},
-            "T": {"color": (160, 0, 243), "border_color": (147, 0, 219)},
-            "Z": {"color": (238, 2, 0), "border_color": (215, 0, 0)},
+            "I": {"type": "next_piece", "color": (1, 240, 241), "border_color": (0, 222, 221)},
+            "J": {"type": "next_piece", "color": (1, 1, 238), "border_color": (6, 8, 165)},
+            "L": {"type": "next_piece", "color": (240, 160, 0), "border_color": (220, 145, 0)},
+            "O": {"type": "next_piece", "color": (240, 241, 0), "border_color": (213, 213, 0)},
+            "S": {"type": "next_piece", "color": (0, 241, 0), "border_color": (0, 218, 0)},
+            "T": {"type": "next_piece", "color": (160, 0, 243), "border_color": (147, 0, 219)},
+            "Z": {"type": "next_piece", "color": (238, 2, 0), "border_color": (215, 0, 0)},
         },
         "shape": {
             "S": [['.....',
