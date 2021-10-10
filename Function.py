@@ -40,18 +40,36 @@ def init_sprite_text(self):
     # Text
     if "text" in self.object:
         self.text = self.object["text"]
+    elif "text" in self.settings:
+        self.text = self.settings["text"]
     else:
         self.text = None
+        print("Text not initialized")
     self.text_pos = self.rect[0] + self.rect[2] / 2, self.rect[1] + self.rect[3] / 2
 
-    # Font
-    self.font = self.main.font_dict[self.settings["font"]]
-    self.font_color = self.settings["font_color"]
+    # Align
+    if "text_align" in self.object:
+        self.text_align = self.object["text_align"]
+    if "text_align" in self.settings:
+        self.text_align = self.settings["text_align"]
+    else:
+        self.text_align = self.align
 
-    # Check
-    self.font_check = self.font is not None
-    if not self.font_check:
-        print("Font not initialized, text: %s" % self.text)
+    # Font
+    if "font" in self.object:
+        self.font = self.main.font_dict[self.object["font"]]
+    if "font" in self.settings:
+        self.font = self.main.font_dict[self.settings["font"]]
+    else:
+        self.font = None
+        print("Font not initialized")
+
+    # Color
+    if "font_color" in self.settings:
+        self.font_color = self.settings["font_color"]
+    else:
+        self.font_color = None
+        print("Color not initialized")
 
 def init_sprite_surface(self):
     if "pos" in self.object:

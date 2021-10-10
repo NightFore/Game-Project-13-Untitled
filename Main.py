@@ -349,18 +349,30 @@ class Next_Piece(pygame.sprite.Sprite):
 
     def init(self):
         init_sprite_surface(self)
-        self.block_surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
+        init_sprite_text(self)
 
     def load(self):
+        # Settings
         self.shape = self.game.shape_dict[self.item][0]
+        self.box_color = self.settings["box_color"]
+        self.box_border_color = self.settings["box_border_color"]
 
     def new(self):
         # Initialization
+        self.block_surface = init_surface(self.surface, self.surface_rect, self.color, self.border_color)
         len_x, len_y = len(self.shape[0]), len(self.shape)
         x_min, x_max = len_x, 0
         y_min, y_max = len_y, 0
+        offset_x, offset_y = 0, self.size[1]/2
 
-        # Position
+        # Box Surface & Rect
+        self.box_size = len_x * self.size[0], len_y * self.size[1]
+        self.box_surface = pygame.Surface(self.box_size)
+        self.box_rect = self.main.align_rect(self.box_surface, int(self.pos[0]), int(self.pos[1]), self.align)
+        self.box_surface_rect = (self.border_size[0], self.border_size[1], self.box_size[0] - 2*self.border_size[0], self.box_size[1] - 2*self.border_size[1])
+        self.box_surface = init_surface(self.box_surface, self.box_surface_rect, self.box_color, self.box_border_color)
+
+        # Tetromino Shape
         self.block_pos = []
         for y, line in enumerate(self.shape):
             for x, column in enumerate(line):
@@ -368,30 +380,28 @@ class Next_Piece(pygame.sprite.Sprite):
                     self.block_pos.append([x, y])
                     x_min, x_max = min(x_min, x), max(x_max, x)
                     y_min, y_max = min(y_min, y), max(y_max, y)
-        width = (abs(x_min - x_max) + 1) * self.game.block_size[0]
-        height = (abs(y_min - y_max) + 1) * self.game.block_size[1]
 
-        # Block Surface
-        block_surface = self.block_surface
-        self.block_surface = pygame.Surface((width, height))
-        self.rect = self.main.align_rect(self.block_surface, int(self.pos[0]), int(self.pos[1] + self.game.block_size[1]/2), self.align)
+        # Tetromino Surface & Rect
+        tetromino_width = (x_max - x_min + 1) * self.size[0]
+        tetromino_height = (y_max - y_min + 1) * self.size[1]
+        self.tetromino_surface = pygame.Surface((tetromino_width, tetromino_height))
+        self.tetromino_rect = self.main.align_rect(self.tetromino_surface, int(self.pos[0] + offset_x), int(self.pos[1] + offset_y), self.align)
         for block in self.block_pos:
             rect = self.rect.copy()
-            rect.x = (block[0]-x_min) * self.game.block_size[0]
-            rect.y = (block[1]-y_min) * self.game.block_size[1]
-            self.block_surface.blit(block_surface, rect)
-
-        # Box
-        box_width, box_height = len_x * self.game.block_size[0], len_y * self.game.block_size[1]
-        self.box_surface = pygame.Surface((box_width, box_height))
-        self.box_rect = self.main.align_rect(self.box_surface, int(self.pos[0]), int(self.pos[1]), self.align)
-        self.box_surface_rect = (6, 6, box_width - 2*6, box_height - 2*6)
-        self.box_surface = init_surface(self.box_surface, self.box_surface_rect, (0, 0, 0), (150, 150, 150))
+            rect.x = (block[0]-x_min) * self.size[0]
+            rect.y = (block[1]-y_min) * self.size[1]
+            self.tetromino_surface.blit(self.block_surface, rect)
 
     def draw(self):
+        # Surface
         self.main.gameDisplay.blit(self.box_surface, self.box_rect)
-        self.main.gameDisplay.blit(self.block_surface, self.rect)
-        self.main.draw_text("NEXT", self.main.font_dict["LiberationSerif"], WHITE, (self.pos[0], self.pos[1] - self.game.block_size[1]), align="s")
+        self.main.gameDisplay.blit(self.tetromino_surface, self.tetromino_rect)
+
+        # Text
+        if self.text is not None and self.font is not None:
+            self.main.draw_text(self.text, self.font, self.font_color, (self.pos[0], self.pos[1] - self.size[1]), self.text_align)
+        else:
+            print("Text or font not initialized")
 
     def update(self):
         pass
@@ -462,14 +472,14 @@ MAIN_DICT = {
             "default": {
                 "align": "nw", "size": (280, 50),
                 "border": True, "border_size": (5, 5), "border_color": BLACK,
-                "font": "LiberationSerif", "font_color": WHITE,
+                "text_align": "center", "font": "LiberationSerif", "font_color": WHITE,
                 "inactive_color": LIGHT_SKY_BLUE, "active_color": DARK_SKY_BLUE,
                 "sound_action": None, "sound_active": None, "sound_inactive": None},
         },
         "main_menu": {
             "new_game": {"type": "default", "pos": (20, 20), "text": "New Game", "action": "self.game.new_game"},
             "change_level": {"type": "default", "pos": (20, 90), "text": "Level 0/9/18", "action": "self.game.change_level"},
-            "options": {"type": "default", "pos": (20, 160)},
+            "options": {"type": "default", "pos": (20, 160), "text": None},
             "exit": {"type": "default", "pos": (20, 230), "text": "Exit", "action": "self.main.quit_game"},
         },
     },
@@ -480,7 +490,11 @@ MAIN_DICT = {
                 "pos": (5, 0), "align": "nw", "size": (30, 30), "border_size": (6, 6),
                 "tap_delay": 16, "das_delay": 6, "drop_delay": 2
             },
-            "next_piece": {"pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6)},
+            "next_piece": {
+                "pos": (885, 400), "align": "center", "size": (30, 30), "border_size": (6, 6),
+                "text": "NEXT", "text_align": "s", "font": "LiberationSerif", "font_color": WHITE,
+                "box_color": BLACK, "box_border_color": (150, 150, 150)
+            },
         },
         "tetromino": {
             "I": {"color": (1, 240, 241), "border_color": (0, 222, 221)},
