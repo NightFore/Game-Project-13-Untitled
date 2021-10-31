@@ -15,6 +15,7 @@ class Game:
     def __init__(self, main):
         self.main = main
         self.tetrominoes = pygame.sprite.Group()
+        self.select_level_buttons = pygame.sprite.Group()
         self.game_dict = self.main.main_dict["game"]
         self.settings_dict = self.game_dict["settings"]
         self.shape_dict = self.game_dict["shape"]
@@ -24,27 +25,38 @@ class Game:
         self.block_border_size = self.settings_dict["block_border_size"]
         self.block_surface = pygame.Surface(self.block_size)
         self.block_surface_rect = (self.block_border_size[0], self.block_border_size[1], self.block_size[0] - 2 * self.block_border_size[0], self.block_size[1] - 2 * self.block_border_size[1])
+        self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
 
-        # WIP
-        self.start_level = 0
-        self.wip = [0, 9, 18]
-        self.wip_index = 0
-
-    def new_game(self):
-        self.line_count = 0
-        self.level = self.start_level
+    def new_game(self, start_level=0):
         self.score = 0
+        self.line_count = 0
+        self.start_level, self.level = start_level, start_level
         self.last_dx = 0
         self.are = 0
         self.grid = create_grid()
-        self.grid_pos = ((screen_size[0] - self.play_width) / 2, screen_size[1] - self.play_height)
         self.Next_Piece = Next_Piece(self.main, self.tetrominoes, self.game_dict, data="next_piece", item=self.get_shape())
         self.new_piece()
 
-    def change_level(self):
-        self.wip_index = (self.wip_index + 1) % len(self.wip)
-        self.start_level = self.wip[self.wip_index]
-        self.new_game()
+    def init_select_level(self):
+        if self.select_level_buttons:
+            self.clear_select_level()
+        else:
+            settings = self.main.main_dict["button"]["settings"]["icon"]
+            pos = (5, 230)
+            size, border_size = settings["size"], settings["border_size"]
+            for index in range(len(self.game_dict["level"])):
+                index_x, index_y = index % 10, index // 10
+                button = Button(self.main, self.select_level_buttons, self.main.button_dict, data="select_level", item="default", variable=index, action=self.select_level)
+                update_sprite_rect(button, pos[0] + (size[0] - border_size[0]/2) * index_x, pos[1] + (size[1] - border_size[1]/2) * index_y)
+                init_sprite_text(button, "%i" % index)
+
+    def select_level(self, level):
+        self.clear_select_level()
+        self.new_game(level)
+
+    def clear_select_level(self):
+        for button in self.select_level_buttons:
+            button.kill()
 
     def new_piece(self):
         for tetromino in self.tetrominoes:
@@ -475,13 +487,21 @@ MAIN_DICT = {
                 "text_align": "center", "font": "LiberationSerif", "font_color": WHITE,
                 "inactive_color": LIGHT_SKY_BLUE, "active_color": DARK_SKY_BLUE,
                 "sound_action": None, "sound_active": None, "sound_inactive": None},
+            "icon": {
+                "align": "nw", "size": (50, 50),
+                "border": True, "border_size": (5, 5), "border_color": BLACK,
+                "text_align": "center", "font": "LiberationSerif", "font_color": WHITE,
+                "inactive_color": LIGHT_SKY_BLUE, "active_color": DARK_SKY_BLUE,
+                "sound_action": None, "sound_active": None, "sound_inactive": None},
         },
         "main_menu": {
             "new_game": {"type": "default", "pos": (20, 20), "text": "New Game", "action": "self.game.new_game"},
-            "change_level": {"type": "default", "pos": (20, 90), "text": "Level 0/9/18", "action": "self.game.change_level"},
-            "options": {"type": "default", "pos": (20, 160), "text": None},
-            "exit": {"type": "default", "pos": (20, 230), "text": "Exit", "action": "self.main.quit_game"},
+            "options": {"type": "default", "pos": (20, 90), "text": "Select Level", "action": "self.game.init_select_level"},
+            "exit": {"type": "default", "pos": (20, 160), "text": "Exit", "action": "self.main.quit_game"},
         },
+        "select_level": {
+            "default": {"type": "icon", "pos": (0, 0), "text": None}
+        }
     },
     "game": {
         "settings": {

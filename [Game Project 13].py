@@ -120,12 +120,12 @@ class Main:
         self.background_color = None
         self.music = None
         self.menu = "main_menu"
-        self.update_menu(self.menu)
 
     # Game Loop ----------------------- #
     def run(self):
-        self.game = Game(self)
         self.init_main()
+        self.game = Game(self)
+        self.update_menu(self.menu)
         self.playing = True
         while self.playing:
             self.dt = self.gameDisplay.clock.tick(FPS) / 1000

@@ -36,9 +36,11 @@ def init_sprite(self, main, group, dict, data, item, parent, variable, action):
     self.load()
     self.new()
 
-def init_sprite_text(self):
+def init_sprite_text(self, text=None):
     # Text
-    if "text" in self.object:
+    if text is not None:
+        self.text = text
+    elif "text" in self.object:
         self.text = self.object["text"]
     elif "text" in self.settings:
         self.text = self.settings["text"]
@@ -108,6 +110,14 @@ def init_surface(surface, surface_rect, color, border_color=None):
     pygame.draw.rect(surface, color, surface_rect)
     return surface
 
+def update_sprite_rect(self, x=None, y=None):
+    if x is None:
+        x = self.pos[0]
+    if y is None:
+        y = self.pos[1]
+    self.pos = (x, y)
+    self.rect = self.main.align_rect(self.surface, int(self.pos[0]), int(self.pos[1]), self.align)
+
 
 
 """
@@ -152,13 +162,6 @@ def update_move(sprite, dx=None, dy=None):
         sprite.pos.x += dx
         sprite.pos.y += dy
     update_rect(sprite)
-
-def update_rect(sprite, x=None, y=None):
-    if x is not None:
-        sprite.pos[0] = x
-    if y is not None:
-        sprite.pos[1] = y
-    sprite.rect = sprite.game.align_rect(sprite.surface, int(sprite.pos[0]), int(sprite.pos[1]), sprite.center)
 
 def update_time_dependent(sprite):
     if sprite.table:
