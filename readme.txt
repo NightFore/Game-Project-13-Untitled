@@ -1,4 +1,5 @@
-Controls:
+----------Credits / Sources----------
+-----Controls:
 ←/a/4: Left
 →/d/6: Right
 ↑/x/w/e/8: Rotate Clockwise
@@ -8,6 +9,7 @@ Space: Hard Drop
 P: Pause
 Esc: Quit
 
+-----Audio:
 This game uses sound materials borrowed from the following sites:
 https://maou.audio/
 https://commons.wikimedia.org/wiki/File:Tetris_theme.ogg
